@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Watchlist - Endurance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #c0c0c0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #fff;
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #ff9f4a;
+            font-size: 0.9em;
+            letter-spacing: 0.15em;
+        }
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .nav-link, .btn {
+            display: inline-block;
+            color: #4a9eff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #4a9eff;
+            transition: all 0.3s;
+            background: transparent;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+        .nav-link:hover, .btn:hover {
+            background: #4a9eff;
+            color: #0a0a0f;
+        }
+        .btn-success {
+            border-color: #4aff9f;
+            color: #4aff9f;
+        }
+        .btn-success:hover {
+            background: #4aff9f;
+            color: #0a0a0f;
+        }
+        .btn-danger {
+            border-color: #ff4a4a;
+            color: #ff4a4a;
+        }
+        .btn-danger:hover {
+            background: #ff4a4a;
+            color: #0a0a0f;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: #111;
+            border-left: 3px solid #ff9f4a;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2.5em;
+            color: #ff9f4a;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+            letter-spacing: 0.1em;
+            font-size: 0.85em;
+        }
+        .add-aircraft-section {
+            background: #111;
+            border: 1px solid #333;
+            border-left: 3px solid #4aff9f;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        .add-aircraft-section h2 {
+            color: #4aff9f;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            letter-spacing: 0.05em;
+        }
+        .form-group input, .form-group textarea {
+            background: #0a0a0f;
+            border: 1px solid #333;
+            color: #c0c0c0;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .watchlist {
+            display: grid;
+            gap: 20px;
+        }
+        .watchlist-item {
+            background: #111;
+            border: 1px solid #333;
+            border-left: 3px solid #ff9f4a;
+            padding: 25px;
+            position: relative;
+            transition: border-color 0.3s;
+        }
+        .watchlist-item.airborne {
+            border-left-color: #4aff9f;
+        }
+        .watchlist-item:hover {
+            border-left-color: #4a9eff;
+        }
+        .watchlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .aircraft-title {
+            flex: 1;
+        }
+        .aircraft-reg {
+            font-size: 1.5em;
+            color: #fff;
+            font-weight: bold;
+        }
+        .aircraft-name {
+            color: #ff9f4a;
+            margin-top: 5px;
+        }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status-airborne {
+            background: #4aff9f;
+            color: #0a0a0f;
+        }
+        .status-not-detected {
+            background: #333;
+            color: #666;
+        }
+        .status-checking {
+            background: #4a9eff;
+            color: #0a0a0f;
+        }
+        .aircraft-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #0d0d0d;
+            border: 1px solid #222;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-label {
+            color: #666;
+            font-size: 0.75em;
+            letter-spacing: 0.1em;
+            margin-bottom: 5px;
+        }
+        .detail-value {
+            color: #4a9eff;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .aircraft-notes {
+            background: #0d0d0d;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 2px solid #333;
+            color: #aaa;
+            line-height: 1.6;
+        }
+        .current-status {
+            background: #0d0d0d;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid #222;
+        }
+        .current-status h4 {
+            color: #4aff9f;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 1.1em;
+        }
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #333;
+            font-size: 0.8em;
+            padding-top: 30px;
+            border-top: 1px solid #222;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4a9eff;
+            font-size: 1.2em;
+        }
+        .error {
+            background: #2a0a0a;
+            border: 1px solid #ff4a4a;
+            color: #ff9f9f;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .success {
+            background: #0a2a0a;
+            border: 1px solid #4aff9f;
+            color: #9fff9f;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AIRCRAFT WATCHLIST</h1>
+            <p class="subtitle">MONITORING SPECIFIC AIRCRAFT OF INTEREST</p>
+        </header>
+
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">← ENDURANCE</a>
+            <a href="military-log.html" class="nav-link">MILITARY LOG</a>
+            <button onclick="checkAllWatchlist()" class="btn btn-success">↻ CHECK ALL AIRCRAFT</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">AIRCRAFT ON WATCHLIST</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-airborne">0</div>
+                <div class="stat-label">CURRENTLY AIRBORNE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-encounters">0</div>
+                <div class="stat-label">TOTAL ENCOUNTERS</div>
+            </div>
+        </div>
+
+        <div class="add-aircraft-section">
+            <h2>+ ADD AIRCRAFT TO WATCHLIST</h2>
+            <div id="addMessage"></div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>REGISTRATION (TAIL NUMBER)</label>
+                    <input type="text" id="input-registration" placeholder="e.g., N12345" />
+                </div>
+                <div class="form-group">
+                    <label>HEX CODE (OPTIONAL)</label>
+                    <input type="text" id="input-hex" placeholder="e.g., abc123" />
+                </div>
+                <div class="form-group">
+                    <label>AIRCRAFT NAME</label>
+                    <input type="text" id="input-name" placeholder="e.g., EVAL01 - Military ISR Aircraft" />
+                </div>
+                <div class="form-group">
+                    <label>ALERT DISTANCE (NM)</label>
+                    <input type="number" id="input-distance" value="100" min="1" max="250" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>NOTES</label>
+                <textarea id="input-notes" placeholder="Why are you tracking this aircraft?"></textarea>
+            </div>
+            <button onclick="addAircraft()" class="btn btn-success" style="margin-top: 15px;">ADD TO WATCHLIST</button>
+        </div>
+
+        <div id="watchlistContainer">
+            <div class="loading">Loading watchlist...</div>
+        </div>
+
+        <footer>
+            ENDURANCE MISSION // AIRCRAFT WATCHLIST // DO NOT GO GENTLE
+        </footer>
+    </div>
+
+    <script>
+        let watchlistData = { aircraft: [] };
+
+        // Load watchlist on page load
+        async function loadWatchlist() {
+            try {
+                const response = await fetch('/watchlist.json');
+                watchlistData = await response.json();
+                renderWatchlist();
+                updateStats();
+            } catch (error) {
+                document.getElementById('watchlistContainer').innerHTML =
+                    '<div class="error">Error loading watchlist: ' + error.message + '</div>';
+            }
+        }
+
+        // Render watchlist items
+        function renderWatchlist() {
+            const container = document.getElementById('watchlistContainer');
+
+            if (watchlistData.aircraft.length === 0) {
+                container.innerHTML = '<div class="empty-state">No aircraft on watchlist yet.<br>Add your first aircraft above.</div>';
+                return;
+            }
+
+            let html = '<div class="watchlist">';
+
+            watchlistData.aircraft.forEach((aircraft, index) => {
+                const isAirborne = aircraft.current_status && aircraft.current_status.detected;
+                const statusClass = isAirborne ? 'airborne' : '';
+                const statusBadge = isAirborne ?
+                    '<span class="status-badge status-airborne">● AIRBORNE</span>' :
+                    '<span class="status-badge status-not-detected">○ NOT DETECTED</span>';
+
+                html += `
+                    <div class="watchlist-item ${statusClass}">
+                        <div class="watchlist-header">
+                            <div class="aircraft-title">
+                                <div class="aircraft-reg">${aircraft.registration || 'UNKNOWN'}</div>
+                                <div class="aircraft-name">${aircraft.name || 'Unknown Aircraft'}</div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <div class="aircraft-details">
+                            <div class="detail-item">
+                                <div class="detail-label">HEX CODE</div>
+                                <div class="detail-value">${aircraft.hex || 'N/A'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">TYPE</div>
+                                <div class="detail-value">${aircraft.type || 'Unknown'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">ALERT DISTANCE</div>
+                                <div class="detail-value">${aircraft.alert_distance || 100} NM</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">ADDED</div>
+                                <div class="detail-value">${new Date(aircraft.added).toLocaleDateString()}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">ENCOUNTERS</div>
+                                <div class="detail-value">${aircraft.encounters ? aircraft.encounters.length : 0}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">LAST SEEN</div>
+                                <div class="detail-value">${aircraft.last_seen ? new Date(aircraft.last_seen).toLocaleString() : 'Never'}</div>
+                            </div>
+                        </div>
+
+                        ${aircraft.notes ? `<div class="aircraft-notes">${aircraft.notes}</div>` : ''}
+
+                        ${aircraft.current_status && aircraft.current_status.detected ? `
+                            <div class="current-status">
+                                <h4>CURRENT FLIGHT STATUS</h4>
+                                <div class="status-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-label">ALTITUDE</div>
+                                        <div class="detail-value">${aircraft.current_status.altitude?.toLocaleString() || 'N/A'} ft</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">SPEED</div>
+                                        <div class="detail-value">${aircraft.current_status.speed || 'N/A'} kts</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">HEADING</div>
+                                        <div class="detail-value">${aircraft.current_status.track || 'N/A'}°</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">DISTANCE</div>
+                                        <div class="detail-value">${aircraft.current_status.distance?.toFixed(1) || 'N/A'} NM</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">CALLSIGN</div>
+                                        <div class="detail-value">${aircraft.current_status.callsign || 'N/A'}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">SQUAWK</div>
+                                        <div class="detail-value">${aircraft.current_status.squawk || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="actions">
+                            <button onclick="checkAircraft(${index})" class="btn btn-small">↻ CHECK STATUS</button>
+                            <button onclick="viewHistory(${index})" class="btn btn-small">📋 VIEW HISTORY</button>
+                            <a href="https://globe.adsb.fi/?icao=${aircraft.hex}" target="_blank" class="btn btn-small">🌐 ADSB.FI</a>
+                            <button onclick="removeAircraft(${index})" class="btn btn-danger btn-small">✕ REMOVE</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('stat-total').textContent = watchlistData.aircraft.length;
+
+            const airborne = watchlistData.aircraft.filter(a =>
+                a.current_status && a.current_status.detected
+            ).length;
+            document.getElementById('stat-airborne').textContent = airborne;
+
+            const totalEncounters = watchlistData.aircraft.reduce((sum, a) =>
+                sum + (a.encounters ? a.encounters.length : 0), 0
+            );
+            document.getElementById('stat-encounters').textContent = totalEncounters;
+        }
+
+        // Add aircraft to watchlist
+        async function addAircraft() {
+            const registration = document.getElementById('input-registration').value.trim().toUpperCase();
+            const hex = document.getElementById('input-hex').value.trim().toLowerCase();
+            const name = document.getElementById('input-name').value.trim();
+            const notes = document.getElementById('input-notes').value.trim();
+            const distance = parseInt(document.getElementById('input-distance').value) || 100;
+
+            const messageDiv = document.getElementById('addMessage');
+
+            if (!registration && !hex) {
+                messageDiv.innerHTML = '<div class="error">Please provide at least a registration or hex code.</div>';
+                return;
+            }
+
+            // Check if already on watchlist
+            const exists = watchlistData.aircraft.some(a =>
+                (registration && a.registration === registration) ||
+                (hex && a.hex === hex)
+            );
+
+            if (exists) {
+                messageDiv.innerHTML = '<div class="error">This aircraft is already on your watchlist.</div>';
+                return;
+            }
+
+            const newAircraft = {
+                hex: hex || null,
+                registration: registration || null,
+                type: null,
+                name: name || null,
+                notes: notes || null,
+                added: new Date().toISOString(),
+                alert_distance: distance,
+                last_seen: null,
+                current_status: null,
+                encounters: []
+            };
+
+            watchlistData.aircraft.push(newAircraft);
+
+            // Save to server
+            try {
+                await saveWatchlist();
+                messageDiv.innerHTML = '<div class="success">Aircraft added to watchlist!</div>';
+
+                // Clear form
+                document.getElementById('input-registration').value = '';
+                document.getElementById('input-hex').value = '';
+                document.getElementById('input-name').value = '';
+                document.getElementById('input-notes').value = '';
+                document.getElementById('input-distance').value = '100';
+
+                renderWatchlist();
+                updateStats();
+
+                setTimeout(() => { messageDiv.innerHTML = ''; }, 3000);
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Error saving: ' + error.message + '</div>';
+            }
+        }
+
+        // Remove aircraft from watchlist
+        async function removeAircraft(index) {
+            const aircraft = watchlistData.aircraft[index];
+            if (confirm(`Remove ${aircraft.registration || aircraft.hex} from watchlist?`)) {
+                watchlistData.aircraft.splice(index, 1);
+                await saveWatchlist();
+                renderWatchlist();
+                updateStats();
+            }
+        }
+
+        // Check single aircraft status
+        async function checkAircraft(index) {
+            const aircraft = watchlistData.aircraft[index];
+            const statusElement = document.querySelectorAll('.watchlist-item')[index];
+            const badge = statusElement.querySelector('.status-badge');
+
+            badge.className = 'status-badge status-checking';
+            badge.textContent = '⟳ CHECKING...';
+
+            try {
+                const query = aircraft.hex || aircraft.registration;
+                const endpoint = aircraft.hex ?
+                    `/api/adsb/hex/${aircraft.hex}` :
+                    `/api/adsb/registration/${aircraft.registration}`;
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (data.ac && data.ac.length > 0) {
+                    const ac = data.ac[0];
+                    aircraft.current_status = {
+                        detected: true,
+                        altitude: ac.alt_baro,
+                        speed: ac.gs,
+                        track: ac.track,
+                        distance: ac.dst,
+                        callsign: ac.flight?.trim(),
+                        squawk: ac.squawk,
+                        lat: ac.lat,
+                        lon: ac.lon,
+                        timestamp: new Date().toISOString()
+                    };
+                    aircraft.last_seen = new Date().toISOString();
+
+                    // Update type if available
+                    if (ac.t && !aircraft.type) {
+                        aircraft.type = ac.t;
+                    }
+                } else {
+                    aircraft.current_status = { detected: false };
+                }
+
+                await saveWatchlist();
+                renderWatchlist();
+                updateStats();
+
+            } catch (error) {
+                badge.className = 'status-badge status-not-detected';
+                badge.textContent = '✕ ERROR';
+                console.error('Error checking aircraft:', error);
+            }
+        }
+
+        // Check all watchlist aircraft
+        async function checkAllWatchlist() {
+            for (let i = 0; i < watchlistData.aircraft.length; i++) {
+                await checkAircraft(i);
+                // Small delay to respect rate limits
+                await new Promise(resolve => setTimeout(resolve, 1200));
+            }
+        }
+
+        // View encounter history
+        function viewHistory(index) {
+            const aircraft = watchlistData.aircraft[index];
+            alert(`Encounter history for ${aircraft.registration || aircraft.hex}:\n\n` +
+                  `Total encounters: ${aircraft.encounters?.length || 0}\n\n` +
+                  `Feature coming soon: Detailed encounter timeline with map visualization.`);
+        }
+
+        // Save watchlist to server
+        async function saveWatchlist() {
+            const response = await fetch('/api/watchlist/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(watchlistData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save watchlist');
+            }
+        }
+
+        // Initialize on page load
+        loadWatchlist();
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100" height="100">
+  <style>
+    .jet { fill: #ff9f4a; }
+    .bg { fill: #0d0d0d; }
+  </style>
+
+  <!-- Background -->
+  <rect class="bg" width="200" height="200"/>
+
+  <!-- Fighter Jet Silhouette (F-22 style) -->
+  <g class="jet">
+    <!-- Fuselage -->
+    <polygon points="100,60 110,100 110,130 100,140 90,130 90,100"/>
+
+    <!-- Main Wings -->
+    <polygon points="70,95 130,95 140,110 60,110"/>
+
+    <!-- Tail Wings -->
+    <polygon points="85,135 115,135 110,145 90,145"/>
+
+    <!-- Vertical Stabilizers -->
+    <polygon points="92,120 88,145 92,145"/>
+    <polygon points="108,120 112,145 108,145"/>
+
+    <!-- Canopy -->
+    <circle cx="100" cy="80" r="6"/>
+
+    <!-- Nose -->
+    <polygon points="95,60 105,60 100,50"/>
+
+    <!-- Engine Exhaust -->
+    <rect x="92" y="138" width="4" height="8"/>
+    <rect x="104" y="138" width="4" height="8"/>
+  </g>
+
+  <!-- Border -->
+  <rect x="2" y="2" width="196" height="196" fill="none" stroke="#ff9f4a" stroke-width="2"/>
+</svg>

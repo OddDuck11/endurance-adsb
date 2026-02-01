@@ -1,0 +1,146 @@
+{
+  "C130": {
+    "name": "Lockheed C-130 Hercules",
+    "mission": "Four-engine turboprop military transport aircraft. Primary missions include tactical airlift, medical evacuation, aerial refueling, weather reconnaissance, and special operations support. Backbone of tactical airlift for U.S. and allied forces since 1956."
+  },
+  "C17": {
+    "name": "Boeing C-17 Globemaster III",
+    "mission": "Large military transport aircraft designed for strategic and tactical airlift missions. Capable of rapid strategic delivery of troops and cargo to main operating bases worldwide, and tactical airlift and airdrop directly into operational areas. Can land on small, austere airfields."
+  },
+  "C5": {
+    "name": "Lockheed C-5 Galaxy",
+    "mission": "Strategic heavy intercontinental-range military transport aircraft. One of the largest military aircraft in the world, designed to provide massive airlift capacity for outsized cargo including tanks, helicopters, and other heavy equipment to support U.S. military operations globally."
+  },
+  "KC135": {
+    "name": "Boeing KC-135 Stratotanker",
+    "mission": "Military aerial refueling aircraft developed from the Boeing 367-80 prototype. Primary mission is to refuel U.S. Air Force, Navy, Marine Corps and allied aircraft in-flight, extending their range and endurance. Also used for cargo and passenger transport."
+  },
+  "K35R": {
+    "name": "Boeing KC-135R/T Stratotanker",
+    "mission": "Re-engined variant of KC-135 Stratotanker with CFM56 turbofan engines providing 25% more thrust and better fuel efficiency. Military aerial refueling aircraft with primary mission to refuel U.S. Air Force, Navy, Marine Corps and allied aircraft in-flight. The 'R' model represents the majority of the active KC-135 fleet."
+  },
+  "KC10": {
+    "name": "McDonnell Douglas KC-10 Extender",
+    "mission": "Advanced tanker and cargo aircraft designed to provide increased global mobility for U.S. armed forces. Combines aerial refueling capability with large cargo capacity, supporting long-range deployment of combat aircraft and rapid movement of combat support resources."
+  },
+  "KC46": {
+    "name": "Boeing KC-46 Pegasus",
+    "mission": "Next-generation aerial refueling and strategic transport aircraft. Features advanced boom and drogue refueling systems, enhanced cargo capability, and modern defensive systems. Replacing aging KC-135 Stratotankers in USAF service."
+  },
+  "F15": {
+    "name": "McDonnell Douglas F-15 Eagle",
+    "mission": "All-weather tactical fighter designed to gain and maintain air superiority. Twin-engine air superiority fighter with exceptional maneuverability and acceleration. Variants include F-15E Strike Eagle for precision ground attack missions."
+  },
+  "F16": {
+    "name": "General Dynamics F-16 Fighting Falcon",
+    "mission": "Multirole fighter aircraft designed as an air superiority day fighter that evolved into successful all-weather multirole aircraft. Highly maneuverable with proven air-to-air and air-to-ground combat capability. One of the most widely used combat aircraft globally."
+  },
+  "F18": {
+    "name": "McDonnell Douglas F/A-18 Hornet",
+    "mission": "Twin-engine, carrier-capable multirole fighter aircraft designed for both air superiority and ground attack missions. Primary fighter for U.S. Navy and Marine Corps. All-weather capability with excellent reliability and versatility."
+  },
+  "F22": {
+    "name": "Lockheed Martin F-22 Raptor",
+    "mission": "Fifth-generation, single-seat, twin-engine, all-weather stealth tactical fighter aircraft. Designed primarily as an air superiority fighter with ground attack, electronic warfare, and signals intelligence capabilities. Advanced stealth, supercruise, and sensor fusion capabilities."
+  },
+  "F35": {
+    "name": "Lockheed Martin F-35 Lightning II",
+    "mission": "Fifth-generation multirole stealth fighter with variants for conventional takeoff/landing (F-35A), carrier operations (F-35C), and short takeoff/vertical landing (F-35B). Advanced sensor fusion, network connectivity, and stealth for air superiority and precision strike missions."
+  },
+  "A10": {
+    "name": "Fairchild Republic A-10 Thunderbolt II",
+    "mission": "Single-seat, twin-turbofan, straight-wing jet aircraft designed for close air support of ground forces. Built around the GAU-8 Avenger 30mm rotary cannon, heavily armored for survivability. Excels at attacking armored vehicles, tanks, and providing troops support."
+  },
+  "B52": {
+    "name": "Boeing B-52 Stratofortress",
+    "mission": "Long-range, subsonic strategic bomber capable of carrying up to 70,000 pounds of weapons including nuclear and precision guided conventional ordnance. Provides U.S. with immediate nuclear and conventional global strike capability. In service since 1955."
+  },
+  "B1": {
+    "name": "Rockwell B-1 Lancer",
+    "mission": "Supersonic variable-sweep wing strategic bomber designed for long-range, high-speed penetration missions. Capable of carrying largest conventional payload of both guided and unguided weapons in USAF inventory. Nicknamed 'The Bone' by aircrews."
+  },
+  "B2": {
+    "name": "Northrop Grumman B-2 Spirit",
+    "mission": "Multirole stealth bomber capable of penetrating sophisticated air defenses to deliver both conventional and nuclear weapons. Flying wing design provides exceptional low-observable characteristics. One of the most advanced and expensive aircraft ever built."
+  },
+  "E3": {
+    "name": "Boeing E-3 Sentry (AWACS)",
+    "mission": "Airborne Warning and Control System aircraft providing all-weather surveillance, command, control and communications. Distinctive rotating radar dome provides 360-degree view for detection and tracking of aircraft. Critical for air battle management and theater air control."
+  },
+  "E2": {
+    "name": "Northrop Grumman E-2 Hawkeye",
+    "mission": "Carrier-capable tactical airborne early warning aircraft. Distinctive rotating radar dome provides all-weather surveillance, command and control, and battle management for carrier strike groups. Eyes of the fleet for detecting and tracking airborne, surface, and land targets."
+  },
+  "P8": {
+    "name": "Boeing P-8 Poseidon",
+    "mission": "Military derivative of Boeing 737-800 designed for anti-submarine warfare, anti-surface warfare, and intelligence, surveillance and reconnaissance missions. Equipped with sensors and weapons for maritime patrol. Replacing P-3 Orion in U.S. Navy service."
+  },
+  "P3": {
+    "name": "Lockheed P-3 Orion",
+    "mission": "Four-engine turboprop anti-submarine and maritime surveillance aircraft. Long-endurance patrol aircraft for detecting and tracking submarines, surface ships, and providing overland reconnaissance. Served U.S. Navy from 1962 through 2013, still operates with allied nations."
+  },
+  "V22": {
+    "name": "Bell Boeing V-22 Osprey",
+    "mission": "Multi-mission tiltrotor military aircraft combining vertical takeoff/landing capability of helicopter with speed and range of turboprop aircraft. Used for combat assault, special operations, combat support and combat service support by Marines, Air Force, and Navy."
+  },
+  "UH60": {
+    "name": "Sikorsky UH-60 Black Hawk",
+    "mission": "Four-blade, twin-engine, medium-lift utility helicopter. Primary medium-lift helicopter for U.S. Army providing air assault, general support, aeromedical evacuation, command and control, and special operations support. Most widely used Army helicopter."
+  },
+  "CH47": {
+    "name": "Boeing CH-47 Chinook",
+    "mission": "Tandem rotor heavy-lift helicopter designed for troop movement, artillery placement, and battlefield resupply. Twin-engine, twin-rotor design provides exceptional lifting capability in high altitude and hot weather conditions. Backbone of Army heavy lift since Vietnam."
+  },
+  "AH64": {
+    "name": "Boeing AH-64 Apache",
+    "mission": "Twin-turboshaft attack helicopter with tailwheel-type landing gear and tandem cockpit for crew of two. Primary attack helicopter for U.S. Army equipped with sensors, targeting systems, and weapons for anti-armor, close air support, and aerial reconnaissance missions."
+  },
+  "MH60": {
+    "name": "Sikorsky MH-60 Pave Hawk/Seahawk",
+    "mission": "Military variant of UH-60 Black Hawk configured for special operations, combat search and rescue (CSAR), anti-submarine warfare, and naval operations. Features advanced avionics, aerial refueling capability, and specialized mission equipment."
+  },
+  "C2": {
+    "name": "Northrop Grumman C-2 Greyhound",
+    "mission": "Twin-engine cargo aircraft designed for carrier onboard delivery (COD). Transports high-priority cargo, mail, and passengers between carriers and shore bases. Critical logistics link for carrier strike groups operating far from land bases."
+  },
+  "T38": {
+    "name": "Northrop T-38 Talon",
+    "mission": "Twin-engine, high-altitude, supersonic jet trainer used in undergraduate pilot training program. First supersonic trainer and one of world's most produced jet trainers. Also used for astronaut training and as companion trainer for advanced fighters."
+  },
+  "T6": {
+    "name": "Beechcraft T-6 Texan II",
+    "mission": "Single-engine turboprop aircraft used for primary undergraduate pilot training. Modern trainer featuring cockpit compatible with front-line tactical aircraft. Used by U.S. Air Force, Navy, and numerous allied nations for basic flight training."
+  },
+  "C130J": {
+    "name": "Lockheed Martin C-130J Super Hercules",
+    "mission": "Modernized version of C-130 Hercules featuring upgraded engines, avionics, and systems. Enhanced performance with longer range, higher ceiling, and greater speed. Continues legacy of tactical airlift, special operations, and humanitarian missions worldwide."
+  },
+  "BE40": {
+    "name": "Raytheon T-1 Jayhawk",
+    "mission": "Twin-engine jet trainer used for undergraduate pilot training in the airlift/tanker track. Military version of the Beechjet 400A. Primary trainer for students destined for multi-engine aircraft including C-17, C-130, KC-135, and KC-46. Operated by Air Education and Training Command at Vance AFB, Columbus AFB, and Laughlin AFB."
+  },
+  "H60": {
+    "name": "Sikorsky UH-60 Black Hawk",
+    "mission": "Four-blade, twin-engine, medium-lift utility helicopter. Primary medium-lift helicopter for U.S. Army providing air assault, general support, aeromedical evacuation, command and control, and special operations support. Most widely used Army helicopter since 1979. Variants include UH-60M (modernized utility), HH-60M (medevac), and MH-60 (special operations)."
+  },
+  "BE20": {
+    "name": "Beechcraft King Air",
+    "mission": "Twin-turboprop utility aircraft used for transport, training, and special missions. Military variants include C-12 Huron for cargo/passenger transport, UC-12 for Navy/Marine Corps utility missions, and RC-12 Guardrail for signals intelligence. Reliable workhorse for administrative airlift and liaison missions."
+  },
+  "C21": {
+    "name": "Learjet C-21A",
+    "mission": "Twin-engine jet used for operational support airlift, military transport of priority cargo and personnel. Provides time-sensitive movement of key personnel and equipment. Based on commercial Learjet 35A. Being replaced by C-37 and C-40 aircraft in many roles."
+  },
+  "GLEX": {
+    "name": "Bombardier Global Express",
+    "mission": "Military designation C-37. Long-range business jet converted for VIP transport and operational support. Used for moving senior government officials, flag officers, and high-priority personnel. Exceptional range allows non-stop intercontinental flights."
+  },
+  "C27J": {
+    "name": "Alenia C-27J Spartan",
+    "mission": "Twin-engine turboprop tactical transport aircraft designed for rapid deployment and operations from austere, short, unprepared airstrips. Medium-lift aircraft filling capability gap between C-130 Hercules and smaller utility helicopters. Used by U.S. Air Force and Army National Guard for cargo transport, troop movement, medical evacuation, and special operations support in challenging environments."
+  },
+  "TEX2": {
+    "name": "Beechcraft T-6A Texan II",
+    "mission": "Single-engine turboprop primary trainer aircraft for Joint Primary Aircraft Training System (JPATS). Used by USAF and Navy for undergraduate pilot training including basic airmanship, aerobatics, instruments, formation, navigation, and cross-country flights. Every Air Force pilot trains in this aircraft before advancing to fighters, bombers, transports, or tankers. Powered by Pratt & Whitney PT6A-68 turboprop (1,100 shp), max speed 316 mph, range 1,036 NM. Based at Laughlin AFB (47th FTW), Sheppard AFB (80th FTW), Vance AFB (71st FTW), and Columbus AFB (14th FTW). Named after legendary WWII-era T-6 Texan trainer."
+  }
+}

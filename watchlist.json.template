@@ -1,0 +1,15 @@
+{
+  "aircraft": [
+    {
+      "hex": "abc123",
+      "registration": "N12345",
+      "type": "GLEX",
+      "name": "Example: EVAL01 - Military ISR Aircraft",
+      "notes": "This is an example aircraft. Replace with aircraft you want to track.",
+      "added": "2026-01-31T20:00:00Z",
+      "alert_distance": 100,
+      "last_seen": null,
+      "encounters": []
+    }
+  ]
+}

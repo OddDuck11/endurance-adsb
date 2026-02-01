@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Aircraft Log - Endurance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #c0c0c0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #fff;
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #ff9f4a;
+            font-size: 0.9em;
+            letter-spacing: 0.15em;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4a9eff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #4a9eff;
+            transition: all 0.3s;
+        }
+        .back-link:hover {
+            background: #4a9eff;
+            color: #0a0a0f;
+        }
+        .stats {
+            background: #111;
+            border-left: 3px solid #ff9f4a;
+            padding: 20px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .stats-value {
+            font-size: 3em;
+            color: #ff9f4a;
+            font-weight: bold;
+        }
+        .stats-label {
+            color: #666;
+            margin-top: 10px;
+            letter-spacing: 0.1em;
+        }
+        .encounter {
+            background: #111;
+            border: 1px solid #333;
+            border-left: 3px solid #ff9f4a;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .encounter:hover {
+            border-left-color: #4a9eff;
+        }
+        .encounter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .aircraft-id {
+            font-size: 1.3em;
+            color: #fff;
+            font-weight: bold;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.85em;
+        }
+        .aircraft-type {
+            color: #ff9f4a;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        .mission-desc {
+            color: #aaa;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #0d0d0d;
+            border-left: 2px solid #333;
+        }
+        .wiki-link-container {
+            margin-bottom: 15px;
+            padding-left: 15px;
+        }
+        .wiki-link {
+            color: #4a9eff;
+            text-decoration: none;
+            font-size: 0.9em;
+            letter-spacing: 0.05em;
+            transition: color 0.3s;
+        }
+        .wiki-link:hover {
+            color: #ff9f4a;
+            text-decoration: underline;
+        }
+        .encounter-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .detail-item {
+            background: #0d0d0d;
+            padding: 12px;
+            border: 1px solid #222;
+        }
+        .detail-label {
+            color: #666;
+            font-size: 0.75em;
+            letter-spacing: 0.1em;
+            margin-bottom: 5px;
+        }
+        .detail-value {
+            color: #4a9eff;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .no-encounters {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+            font-size: 1.1em;
+        }
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #333;
+            font-size: 0.8em;
+            padding-top: 30px;
+            border-top: 1px solid #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MILITARY AIRCRAFT LOG</h1>
+            <p class="subtitle">DETECTED WITHIN 50 NAUTICAL MILES</p>
+        </header>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;">
+            <a href="index.html" class="back-link">← BACK TO ENDURANCE</a>
+            <a href="watchlist.html" class="back-link" style="border-color: #4aff9f; color: #4aff9f;">★ WATCHLIST</a>
+        </div>
+
+        <div class="stats">
+            <div class="stats-value">16</div>
+            <div class="stats-label">TOTAL ENCOUNTERS LOGGED</div>
+        </div>
+
+        <div class="encounters-list">
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">93-0647</div>
+                    <div class="timestamp">2026-01-31 15:06:03 CST</div>
+                </div>
+                <div class="aircraft-type">Raytheon T-1 Jayhawk</div>
+                <div class="mission-desc">Twin-engine jet trainer used for undergraduate pilot training in the airlift/tanker track. Military version of the Beechjet 400A. Primary trainer for students destined for multi-engine aircraft including C-17, C-130, KC-135, and KC-46. Operated by Air Education and Training Command at Vance AFB, Columbus AFB, and Laughlin AFB.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Raytheon_T-1_Jayhawk" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=adfcc7&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-31" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">adfcc7</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">45.1 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">27,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">VANDY99 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">BE40</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">08-3926</div>
+                    <div class="timestamp">2026-01-31 12:54:03 CST</div>
+                </div>
+                <div class="aircraft-type">Beechcraft T-6A Texan II</div>
+                <div class="mission-desc">Single-engine turboprop primary trainer aircraft for Joint Primary Aircraft Training System (JPATS). Used by USAF and Navy for undergraduate pilot training including basic airmanship, aerobatics, instruments, formation, navigation, and cross-country flights. Every Air Force pilot trains in this aircraft before advancing to fighters, bombers, transports, or tankers. Powered by Pratt & Whitney PT6A-68 turboprop (1,100 shp), max speed 316 mph, range 1,036 NM. Based at Laughlin AFB (47th FTW), Sheppard AFB (80th FTW), Vance AFB (71st FTW), and Columbus AFB (14th FTW). Named after legendary WWII-era T-6 Texan trainer.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Beechcraft_T-6_Texan_II" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae1e9b&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-31" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae1e9b</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">14.4 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">3,850 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">HOOK54  </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">TEX2</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">N12345</div>
+                    <div class="timestamp">2026-01-29 20:24:03 CST</div>
+                </div>
+                <div class="aircraft-type">Business Jet</div>
+                <div class="mission-desc">Military designation C-37. Long-range business jet converted for VIP transport and operational support. Used for moving senior government officials, flag officers, and high-priority personnel. Exceptional range allows non-stop intercontinental flights.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Bombardier_Global_Express" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=abc123&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-29" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">abc123</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">46.3 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">34,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">EVAL01  </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">GLEX</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">18-02973</div>
+                    <div class="timestamp">2026-01-23 15:27:04 CST</div>
+                </div>
+                <div class="aircraft-type">H47</div>
+                <div class="mission-desc">Mission profile not available in database.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/H47" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae6ed7&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-23" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae6ed7</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">32.7 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">3,775 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">PINT82  </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">H47</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">19-02914</div>
+                    <div class="timestamp">2026-01-23 15:21:03 CST</div>
+                </div>
+                <div class="aircraft-type">H47</div>
+                <div class="mission-desc">Mission profile not available in database.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/H47" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae6cf6&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-23" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae6cf6</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">29.8 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">3,800 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">PINT81  </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">H47</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">09-9205</div>
+                    <div class="timestamp">2026-01-23 12:39:04 CST</div>
+                </div>
+                <div class="aircraft-type">Boeing C-17 Globemaster III</div>
+                <div class="mission-desc">Large military transport aircraft designed for strategic and tactical airlift missions. Capable of rapid strategic delivery of troops and cargo to main operating bases worldwide, and tactical airlift and airdrop directly into operational areas. Can land on small, austere airfields.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae49c1&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-23" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae49c1</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">29.9 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">29,950 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">RCH872  </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C17</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">07-27010</div>
+                    <div class="timestamp">2026-01-23 12:18:04 CST</div>
+                </div>
+                <div class="aircraft-type">Alenia C-27J Spartan</div>
+                <div class="mission-desc">Twin-engine turboprop tactical transport aircraft designed for rapid deployment and operations from austere, short, unprepared airstrips. Medium-lift aircraft filling capability gap between C-130 Hercules and smaller utility helicopters. Used by U.S. Air Force and Army National Guard for cargo transport, troop movement, medical evacuation, and special operations support in challenging environments.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Alenia_C-27_Spartan" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae2125&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-23" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae2125</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">48.8 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">16,750 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">C2701   </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C27J</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">07-27010</div>
+                    <div class="timestamp">2026-01-23 09:18:04 CST</div>
+                </div>
+                <div class="aircraft-type">Alenia C-27J Spartan</div>
+                <div class="mission-desc">Twin-engine turboprop tactical transport aircraft designed for rapid deployment and operations from austere, short, unprepared airstrips. Medium-lift aircraft filling capability gap between C-130 Hercules and smaller utility helicopters. Used by U.S. Air Force and Army National Guard for cargo transport, troop movement, medical evacuation, and special operations support in challenging environments.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Alenia_C-27_Spartan" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae2125&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-23" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae2125</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">49.5 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">18,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">C2701   </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C27J</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">01-00301</div>
+                    <div class="timestamp">2026-01-22 16:03:03 CST</div>
+                </div>
+                <div class="aircraft-type">C560</div>
+                <div class="mission-desc">Mission profile not available in database.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/C560" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae093d&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-22" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae093d</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">25.1 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">41,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">FORGE31 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C560</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">18-20985</div>
+                    <div class="timestamp">2026-01-22 16:03:03 CST</div>
+                </div>
+                <div class="aircraft-type">Sikorsky UH-60 Black Hawk</div>
+                <div class="mission-desc">Four-blade, twin-engine, medium-lift utility helicopter. Primary medium-lift helicopter for U.S. Army providing air assault, general support, aeromedical evacuation, command and control, and special operations support. Most widely used Army helicopter since 1979. Variants include UH-60M (modernized utility), HH-60M (medevac), and MH-60 (special operations).</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Sikorsky_UH-60_Black_Hawk" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=af4fb3&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-22" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">af4fb3</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">48.2 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">2,825 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">SHINR19 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">H60</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">18-5911</div>
+                    <div class="timestamp">2026-01-22 13:15:03 CST</div>
+                </div>
+                <div class="aircraft-type">C30J</div>
+                <div class="mission-desc">Mission profile not available in database.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/C30J" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae6912&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-22" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae6912</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">33.7 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">29,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">ROPER91 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C30J</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">07-27010</div>
+                    <div class="timestamp">2026-01-16 09:12:04 CST</div>
+                </div>
+                <div class="aircraft-type">Alenia C-27J Spartan</div>
+                <div class="mission-desc">Twin-engine turboprop tactical transport aircraft designed for rapid deployment and operations from austere, short, unprepared airstrips. Medium-lift aircraft filling capability gap between C-130 Hercules and smaller utility helicopters. Used by U.S. Air Force and Army National Guard for cargo transport, troop movement, medical evacuation, and special operations support in challenging environments.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Alenia_C-27_Spartan" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae2125&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-16" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae2125</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">41.4 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">18,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">C2701   </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">C27J</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">93-0656</div>
+                    <div class="timestamp">2026-01-14 14:03:04 CST</div>
+                </div>
+                <div class="aircraft-type">Raytheon T-1 Jayhawk</div>
+                <div class="mission-desc">Twin-engine jet trainer used for undergraduate pilot training in the airlift/tanker track. Military version of the Beechjet 400A. Primary trainer for students destined for multi-engine aircraft including C-17, C-130, KC-135, and KC-46. Operated by Air Education and Training Command at Vance AFB, Columbus AFB, and Laughlin AFB.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Raytheon_T-1_Jayhawk" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=adfcd0&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-14" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">adfcd0</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">20.7 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">19,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">VANDY04 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">BE40</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">03-26993</div>
+                    <div class="timestamp">2026-01-14 10:12:03 CST</div>
+                </div>
+                <div class="aircraft-type">Sikorsky UH-60 Black Hawk</div>
+                <div class="mission-desc">Four-blade, twin-engine, medium-lift utility helicopter. Primary medium-lift helicopter for U.S. Army providing air assault, general support, aeromedical evacuation, command and control, and special operations support. Most widely used Army helicopter since 1979. Variants include UH-60M (modernized utility), HH-60M (medevac), and MH-60 (special operations).</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Sikorsky_UH-60_Black_Hawk" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                    <br>
+                    <a href="https://globe.adsb.fi/?icao=ae21d7&lat=31.603&lon=-94.655&zoom=8.5&showTrace=2026-01-14" target="_blank" class="wiki-link">→ View flight replay on ADSB.fi</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">ae21d7</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">14.4 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">3,400 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">ALAMO20 </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">H60</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">null</div>
+                    <div class="timestamp">2026-01-13 19:03:07 CST</div>
+                </div>
+                <div class="aircraft-type">null</div>
+                <div class="mission-desc">Mission profile not available in database.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/null" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">UNKNOWN</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">11.0 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">34,000 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">null</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">null</div>
+                    </div>
+                </div>
+            </div>
+            <div class="encounter">
+                <div class="encounter-header">
+                    <div class="aircraft-id">59-1471</div>
+                    <div class="timestamp">2026-01-11 15:15:03 CST</div>
+                </div>
+                <div class="aircraft-type">Boeing KC-135R/T Stratotanker</div>
+                <div class="mission-desc">Re-engined variant of KC-135 Stratotanker with CFM56 turbofan engines providing 25% more thrust and better fuel efficiency. Military aerial refueling aircraft with primary mission to refuel U.S. Air Force, Navy, Marine Corps and allied aircraft in-flight. The 'R' model represents the majority of the active KC-135 fleet.</div>
+                <div class="wiki-link-container">
+                    <a href="https://en.wikipedia.org/wiki/Boeing_KC-135_Stratotanker" target="_blank" class="wiki-link">→ Learn more on Wikipedia</a>
+                </div>
+                <div class="encounter-details">
+                    <div class="detail-item">
+                        <div class="detail-label">MODE-S HEX</div>
+                        <div class="detail-value">UNKNOWN</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">DISTANCE</div>
+                        <div class="detail-value">11.2 NM</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ALTITUDE</div>
+                        <div class="detail-value">23,925 ft</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CALLSIGN</div>
+                        <div class="detail-value">null</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">TYPE CODE</div>
+                        <div class="detail-value">K35R</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            ENDURANCE MISSION // MILITARY AIRCRAFT TRACKING // DO NOT GO GENTLE
+        </footer>
+    </div>
+</body>
+</html>
