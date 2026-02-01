@@ -375,13 +375,13 @@ if encounters:
                 # Parse timestamp like "2026-01-14 10:12:03 CST"
                 date_part = timestamp.split()[0]  # Gets "2026-01-14"
                 # Leonard's location: YOUR_CITY, STATE
-                lat = "31.603"
-                lon = "-94.655"
+                lat = "32.000"
+                lon = "-95.000"
                 zoom = "8.5"
                 adsb_link = f"https://globe.adsb.fi/?icao={hex_code.lower()}&lat={lat}&lon={lon}&zoom={zoom}&showTrace={date_part}"
             except:
                 # Fallback if date parsing fails
-                adsb_link = f"https://globe.adsb.fi/?icao={hex_code.lower()}&lat=31.603&lon=-94.655&zoom=8.5"
+                adsb_link = f"https://globe.adsb.fi/?icao={hex_code.lower()}&lat=32.000&lon=-95.000&zoom=8.5"
 
         html += f'''            <div class="encounter">
                 <div class="encounter-header">
