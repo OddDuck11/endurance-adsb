@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADSB Tracker - Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1220;
+      --bg-secondary: #141c2c;
+      --bg-tertiary: #1c2638;
+      --text-primary: #f0f2f5;
+      --text-secondary: #c0c8d4;
+      --text-muted: #8a919d;
+      --cyan: #12c2e9;
+      --purple: #c471ed;
+      --pink: #ff6b9d;
+      --magenta: #e879f9;
+      --blue: #6BB6FF;
+      --orange: #F39C12;
+      --teal: #2dd4bf;
+      --red: #ef4444;
+      --green: #22c55e;
+      --border: rgba(255, 255, 255, 0.08);
+      --mil-accent: #F39C12;
+      --radar-green: #22c55e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────── */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .top-nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; }
+    .top-nav a:hover { color: var(--cyan); }
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-weight: 700; font-size: 1.1rem; color: var(--cyan) !important;
+    }
+    .nav-brand .radar-icon { font-size: 1.3rem; }
+
+    /* ── Tabs ────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    .tab {
+      padding: 0.75rem 1.25rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .tab .badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .badge-mil { background: rgba(243, 156, 18, 0.2); color: var(--orange); }
+    .badge-alert { background: rgba(239, 68, 68, 0.25); color: var(--red); animation: pulse 2s infinite; }
+    .badge-squawk { background: rgba(239, 68, 68, 0.35); color: #ff8080; animation: pulse 1.5s infinite; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* ── Alert Banner ────────────────────────────────────────── */
+    .alert-banner {
+      background: linear-gradient(90deg, rgba(243, 156, 18, 0.15), rgba(255, 107, 157, 0.15));
+      border-bottom: 1px solid var(--orange);
+      padding: 0.6rem 1.5rem;
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .alert-banner.visible { display: flex; }
+    .alert-banner.squawk-active {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.2), rgba(255, 107, 157, 0.15));
+      border-bottom-color: var(--red);
+    }
+    .alert-banner .alert-icon { font-size: 1.2rem; }
+    .alert-banner .alert-text { flex: 1; color: var(--orange); font-weight: 500; }
+    .alert-banner.squawk-active .alert-text { color: #ff8080; }
+    .alert-banner .alert-dismiss {
+      background: none; border: 1px solid var(--orange); color: var(--orange);
+      padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
+    }
+    .alert-banner .alert-dismiss:hover { background: rgba(243, 156, 18, 0.2); }
+    .alert-banner.squawk-active .alert-dismiss { border-color: var(--red); color: var(--red); }
+
+    /* ── Squawk type badges ──────────────────────────────────── */
+    .squawk-badge {
+      display: inline-block; padding: 0.15rem 0.45rem; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 700; font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+    }
+    .squawk-EMERGENCY { background: rgba(239, 68, 68, 0.25); color: #ff8080; }
+    .squawk-HIJACK    { background: rgba(239, 68, 68, 0.35); color: #ff4444; }
+    .squawk-NORDO     { background: rgba(243, 156, 18, 0.2); color: var(--orange); }
+    .squawk-INTERCEPT { background: rgba(196, 113, 237, 0.2); color: var(--purple); }
+
+    /* ── Container ───────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+    /* ── Status Bar ──────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .status-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    .status-item .val { color: var(--text-primary); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s infinite;
+    }
+    .status-dot.error {
+      background: var(--red); border-radius: 0;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      width: 10px; height: 10px;
+    }
+    .status-dot.stale {
+      background: var(--orange); border-radius: 2px;
+    }
+    .refresh-btn {
+      background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--cyan);
+      padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+      transition: all 0.2s; margin-left: auto;
+    }
+    .refresh-btn:hover { background: rgba(18, 194, 233, 0.1); border-color: var(--cyan); }
+    .refresh-btn.spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── Pushover status indicator ───────────────────────────── */
+    .pushover-indicator {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.75rem; color: var(--text-muted);
+    }
+    .pushover-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted);
+    }
+    .pushover-dot.active { background: var(--teal); }
+
+    /* ── Cards ────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 {
+      font-size: 1rem; font-weight: 600; color: var(--cyan);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    /* ── Aircraft Table ──────────────────────────────────────── */
+    .ac-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .ac-table th {
+      text-align: left;
+      padding: 0.4rem 0.4rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .ac-table th:hover { color: var(--cyan); }
+    .ac-table th .sort-arrow { margin-left: 0.3rem; font-size: 0.6rem; }
+    .ac-table td {
+      padding: 0.4rem 0.4rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .ac-table tr:hover { background: var(--bg-tertiary); }
+    .ac-table tr.mil {
+      border-left: 3px solid var(--orange);
+      background: rgba(243, 156, 18, 0.08);
+    }
+    .ac-table tr.mil:hover {
+      background: rgba(243, 156, 18, 0.12);
+    }
+    .ac-table tr.mil td:first-child { padding-left: calc(0.6rem - 3px); }
+    .ac-table tr.squawk-row {
+      border-left: 3px solid var(--red);
+    }
+    .mil-badge {
+      display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(243, 156, 18, 0.15); color: var(--orange);
+      border: 1px solid rgba(243, 156, 18, 0.3);
+      font-family: 'Inter', sans-serif;
+    }
+    .ac-callsign { color: var(--cyan); font-weight: 600; }
+    .ac-callsign.mil-callsign { color: var(--orange); }
+    .ac-type { color: var(--text-secondary); }
+    .ac-alt { color: var(--text-primary); }
+    .ac-speed { color: var(--blue); }
+    .ac-dist { color: var(--purple); }
+
+    /* Altitude color banding (VD-1) */
+    .alt-ground { color: var(--text-muted); }
+    .alt-low { color: var(--teal); }
+    .alt-mid { color: var(--blue); }
+    .alt-high { color: var(--purple); }
+
+    /* Distance proximity emphasis (VD-2) */
+    .dist-near { color: var(--teal); font-weight: 600; }
+    .dist-very-near { color: var(--pink); font-weight: 600; animation: dist-pulse 1.5s ease-in-out infinite; }
+    @keyframes dist-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* Data update pulse (ID-1) */
+    @keyframes data-pulse {
+      0% { box-shadow: inset 0 0 8px rgba(45, 212, 191, 0.4); }
+      100% { box-shadow: inset 0 0 0 transparent; }
+    }
+    .data-updated { animation: data-pulse 1s ease-out; }
+
+    /* Table fade transition (ID-4) */
+    .table-refreshing { opacity: 0.3; transition: opacity 0.2s; }
+
+    /* Toast notification (ID-5) */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500;
+      color: var(--text-primary);
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.visible { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--teal); color: var(--teal); }
+    .toast.error { border-color: var(--pink); color: var(--pink); }
+
+    /* Refresh button icon-only spin (ID-6) */
+    .refresh-btn .spin-icon { display: inline-block; }
+    .refresh-btn.spinning .spin-icon { animation: spin 1s linear infinite; }
+    .refresh-btn.spinning { animation: none; }
+
+    /* ── Settings Panel ──────────────────────────────────────── */
+    .settings-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+    }
+    .setting-group label {
+      display: block; font-size: 0.75rem; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
+    }
+    .setting-group input[type="number"],
+    .setting-group input[type="text"],
+    .setting-group input[type="password"] {
+      width: 100%; padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+    }
+    .setting-group input:focus { outline: none; border-color: var(--cyan); }
+    .setting-group .unit { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .save-btn {
+      background: var(--cyan); color: var(--bg-primary); border: none;
+      padding: 0.5rem 1.5rem; border-radius: 6px; cursor: pointer;
+      font-weight: 600; font-size: 0.85rem; margin-top: 1rem;
+    }
+    .save-btn:hover { opacity: 0.9; }
+
+    /* ── Toggle switch ───────────────────────────────────────── */
+    .toggle-row {
+      display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem;
+    }
+    .toggle-label { font-size: 0.85rem; color: var(--text-secondary); }
+    .toggle {
+      position: relative; display: inline-block; width: 42px; height: 22px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: 22px; transition: 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; left: 2px; bottom: 2px;
+      background: var(--text-muted); border-radius: 50%; transition: 0.2s;
+    }
+    input:checked + .slider { background: rgba(45, 212, 191, 0.2); border-color: var(--teal); }
+    input:checked + .slider::before { transform: translateX(20px); background: var(--teal); }
+
+    /* ── Test button ─────────────────────────────────────────── */
+    .test-btn {
+      background: var(--teal); color: var(--bg-primary); border: none;
+      padding: 0.5rem 1.5rem; border-radius: 6px; cursor: pointer;
+      font-weight: 600; font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .test-btn:hover { opacity: 0.9; }
+    .test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Military Log ────────────────────────────────────────── */
+    .mil-links { display: flex; gap: 0.5rem; }
+    .mil-link {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem;
+      text-decoration: none; font-family: 'Inter', sans-serif;
+    }
+    .mil-link.wiki { background: rgba(18, 194, 233, 0.15); color: var(--cyan); }
+    .mil-link.track { background: rgba(45, 212, 191, 0.15); color: var(--teal); }
+    .mil-link:hover { opacity: 0.8; }
+
+    /* ── Watchlist ────────────────────────────────────────────── */
+    .watchlist-add {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .watchlist-add select, .watchlist-add input {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;
+    }
+    .watchlist-add select { width: 130px; }
+    .watchlist-add input { flex: 1; min-width: 150px; }
+    .watchlist-add input:focus, .watchlist-add select:focus { outline: none; border-color: var(--cyan); }
+    .add-btn {
+      background: var(--teal); color: var(--bg-primary); border: none;
+      padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
+      font-weight: 600; font-size: 0.85rem;
+    }
+    .add-btn:hover { opacity: 0.9; }
+    .remove-btn {
+      background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 0.2rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;
+    }
+    .remove-btn:hover { background: rgba(239, 68, 68, 0.3); }
+    .watch-btn {
+      background: rgba(243, 156, 18, 0.15); color: var(--orange); border: 1px solid rgba(243, 156, 18, 0.3);
+      padding: 0.15rem 0.4rem; border-radius: 3px; cursor: pointer; font-size: 0.65rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .watch-btn:hover { background: rgba(243, 156, 18, 0.3); }
+
+    /* ── Tab Panels ──────────────────────────────────────────── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Empty State ─────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 3rem 1rem; color: var(--text-muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── Stats Grid ──────────────────────────────────────────── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .stat-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.75rem 1rem; text-align: center;
+    }
+    .stat-card .stat-val {
+      font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+    }
+    .stat-card .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card.mil .stat-val { color: var(--orange); }
+    .stat-card.alert .stat-val { color: var(--pink); }
+    .stat-card.refresh .stat-val { color: var(--radar-green); }
+
+    /* ── Expand Row ──────────────────────────────────────────── */
+    .expand-row { background: var(--bg-tertiary) !important; }
+    .expand-content {
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .expand-content .detail-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem;
+    }
+    .detail-item label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+    .detail-item .val { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .container { padding: 0.75rem; }
+      .status-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .ac-table { font-size: 0.72rem; }
+      .ac-table td, .ac-table th { padding: 0.4rem; }
+      .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; white-space: nowrap; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .hide-mobile { display: none; }
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Mobile card layout (R-1) */
+    .card-list { display: none; }
+    @media (max-width: 480px) {
+      .stats-grid .stat-val { font-size: 1.2rem; }
+      .tab { min-height: 44px; display: flex; align-items: center; }
+      .mil-link, .watch-btn, .remove-btn, .add-btn, .refresh-btn { min-height: 44px; min-width: 44px; }
+      #panel-dashboard .table-wrap { display: none; }
+      .card-list { display: block; }
+      .aircraft-card {
+        background: var(--bg-secondary); border: 1px solid var(--border);
+        border-radius: 10px; padding: 14px 16px; margin-bottom: 8px;
+      }
+      .aircraft-card.military { border-left: 3px solid var(--orange); }
+      .aircraft-card .card-callsign {
+        font-family: 'JetBrains Mono', monospace; font-weight: 600;
+        font-size: 0.9rem; color: var(--cyan);
+      }
+      .aircraft-card .card-callsign.military { color: var(--orange); }
+      .aircraft-card .card-detail {
+        display: flex; justify-content: space-between; flex-wrap: wrap;
+        font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+        color: var(--text-secondary); margin-top: 4px;
+      }
+    }
+
+    /* ── Collapsible Settings ─────────────────────────────────── */
+    .settings-toggle {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; font-size: 1rem;
+    }
+    .settings-toggle:hover { color: var(--cyan); border-color: var(--cyan); }
+    .settings-toggle.active { color: var(--cyan); border-color: var(--cyan); }
+    .settings-collapse {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    }
+    .settings-collapse.open {
+      max-height: 2000px;
+    }
+
+    /* ── Accordion Sections (IA-2) ──────────────────────────── */
+    .accordion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none; padding: 0;
+    }
+    .accordion-header .chevron {
+      font-size: 0.75rem; color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .accordion-header.open .chevron { transform: rotate(90deg); }
+    .accordion-body {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    }
+    .accordion-body.open {
+      max-height: 3000px;
+    }
+
+    /* ── Scrollable Table ────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+
+    /* Radar sweep animation for header (VD-7) */
+    .radar-sweep {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--teal);
+      position: relative;
+      opacity: 0.8;
+    }
+    .radar-sweep::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 8px; height: 1.5px;
+      background: var(--teal);
+      transform-origin: left center;
+      animation: radar-sweep 5s linear infinite;
+    }
+    @keyframes radar-sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── Pushover settings section ───────────────────────────── */
+    .section-divider {
+      border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;
+    }
+    .section-heading {
+      font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 0.75rem; font-weight: 600;
+    }
+    .pushover-actions {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem;
+    }
+    .status-msg {
+      font-size: 0.8rem; padding: 0.3rem 0.75rem; border-radius: 4px;
+    }
+    .status-msg.ok { background: rgba(34, 197, 94, 0.1); color: var(--green); }
+    .status-msg.err { background: rgba(239, 68, 68, 0.1); color: var(--red); }
+
+    /* Focus indicators (A11Y-3) */
+    :focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    /* CRT Scanline overlay (VD-9) */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+      );
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+        body::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="top-nav">
+  <a href="/" class="nav-brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+    ADSB Tracker
+  </a>
+  <a href="/">&larr; Portal</a>
+</nav>
+
+<!-- Alert Banner -->
+<div class="alert-banner" id="alertBanner">
+  <span class="alert-icon" id="alertIcon">&#9888;&#65039;</span>
+  <span class="alert-text" id="alertText"></span>
+  <button class="alert-dismiss" id="alertDismissBtn" aria-label="Dismiss all alerts">Dismiss All</button>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar" role="tablist" aria-label="ADSB Tracker navigation">
+  <div class="tab active" data-tab="dashboard" role="tab" aria-selected="true" tabindex="0">
+    <span class="radar-sweep"></span> Dashboard
+  </div>
+  <div class="tab" data-tab="military" role="tab" aria-selected="false" tabindex="-1">
+    &#9876;&#65039; Military Log <span class="badge badge-mil" id="milBadge">0</span>
+  </div>
+  <div class="tab" data-tab="watchlist" role="tab" aria-selected="false" tabindex="-1">
+    &#128065; Watchlist <span class="badge badge-alert" id="alertBadge" style="display:none">0</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══ DASHBOARD TAB ═══════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-dashboard" role="tabpanel" aria-label="Dashboard">
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-dot" id="statusDot" role="status" aria-label="Connection status: OK"></div>
+        <span>Status</span>
+      </div>
+      <div class="status-item">
+        Last: <span class="val" id="lastFetch">--</span>
+      </div>
+      <!-- Countdown moved to stats grid -->
+      <div class="status-item">
+        All radius: <span class="val" id="allRadiusDisplay">5</span> NM
+      </div>
+      <div class="status-item">
+        Mil radius: <span class="val" id="milRadiusDisplay">50</span> NM
+      </div>
+      <div class="status-item">
+        Squawk: <span class="val" id="squawkRadiusDisplay">25</span> NM
+      </div>
+      <div class="pushover-indicator" id="pushoverIndicator" title="Pushover notifications">
+        <div class="pushover-dot" id="pushoverDot"></div>
+        <span id="pushoverStatus">Pushover: off</span>
+      </div>
+      <button class="refresh-btn" id="refreshBtn"><span class="spin-icon">&#8635;</span> Refresh</button>
+      <button class="settings-toggle" id="settingsToggle" title="Settings" aria-label="Toggle settings panel" aria-expanded="false">&#9881;</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="statTotal">-</div>
+        <div class="stat-label">Aircraft</div>
+      </div>
+      <div class="stat-card mil">
+        <div class="stat-val" id="statMil">-</div>
+        <div class="stat-label">Military</div>
+      </div>
+      <div class="stat-card alert">
+        <div class="stat-val" id="statAlerts">-</div>
+        <div class="stat-label">Alerts</div>
+      </div>
+      <div class="stat-card refresh">
+        <div class="stat-val" id="statCountdown">-</div>
+        <div class="stat-label">Next Refresh</div>
+      </div>
+    </div>
+
+    <!-- Aircraft Table -->
+    <div class="card">
+      <h2>&#9992;&#65039; Aircraft in Range</h2>
+      <div class="table-wrap">
+        <table class="ac-table" id="aircraftTable">
+          <thead>
+            <tr>
+              <th scope="col" data-sort="updated_at">Seen <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="flight">Callsign <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="type_desc">Type <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="registration">Reg <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="alt_baro">Alt <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="ground_speed">Spd <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="distance_nm">Dist <span class="sort-arrow"></span></th>
+              <th scope="col" data-sort="squawk">Sqwk <span class="sort-arrow"></span></th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="aircraftBody" aria-live="polite"></tbody>
+        </table>
+      </div>
+      <!-- Mobile card list (R-1) -->
+      <div class="card-list" id="aircraftCards"></div>
+      <!-- Pagination (P-4) -->
+      <div id="acPagination" style="text-align:center;margin-top:0.75rem;display:none">
+        <button class="refresh-btn" id="acPrev" style="margin-right:0.5rem">&larr; Prev</button>
+        <span id="acPageInfo" style="font-size:0.8rem;color:var(--text-muted)">Page 1</span>
+        <button class="refresh-btn" id="acNext" style="margin-left:0.5rem">Next &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Collapsible Settings (IA-1: moved from separate tab) -->
+    <div class="settings-collapse" id="settingsCollapse">
+
+      <!-- Tracking Settings -->
+      <div class="card">
+        <h2>&#9881;&#65039; Tracking Settings</h2>
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label>All Aircraft Radius</label>
+            <input type="number" id="settAllRadius" min="1" max="250" value="5" />
+            <div class="unit">Nautical Miles (1-250)</div>
+          </div>
+          <div class="setting-group">
+            <label>Military Radius</label>
+            <input type="number" id="settMilRadius" min="1" max="250" value="50" />
+            <div class="unit">Nautical Miles (1-250)</div>
+          </div>
+          <div class="setting-group">
+            <label>Squawk Code Radius</label>
+            <input type="number" id="settSquawkRadius" min="1" max="250" value="25" />
+            <div class="unit">Nautical Miles - 7500/7600/7700/7777</div>
+          </div>
+          <div class="setting-group">
+            <label>Refresh Interval</label>
+            <input type="number" id="settRefresh" min="30" max="300" value="30" />
+            <div class="unit">Seconds (min 30)</div>
+          </div>
+        </div>
+        <button class="save-btn" onclick="saveTrackingSettings()">Save Settings</button>
+      </div>
+
+      <!-- Pushover Settings -->
+      <div class="card">
+        <h2>&#128242; Pushover Notifications</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
+          Alerts fire for <strong style="color:var(--cyan)">watchlist matches</strong> and
+          <strong style="color:var(--red)">emergency squawk codes</strong> only.
+          Get your App Token at <a href="https://pushover.net/apps/build" target="_blank" style="color:var(--cyan)">pushover.net/apps/build</a>.
+        </p>
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label>User Key</label>
+            <input type="text" id="settPushoverUserKey" placeholder="Your Pushover user key" autocomplete="off" />
+            <div class="unit">From your Pushover account page</div>
+          </div>
+          <div class="setting-group">
+            <label>App Token</label>
+            <input type="password" id="settPushoverAppToken" placeholder="Your app API token" autocomplete="off" />
+            <div class="unit">Create app at pushover.net/apps/build</div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="settPushoverEnabled" onchange="savePushoverEnabled()">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">Enable Pushover notifications</span>
+        </div>
+        <div class="pushover-actions">
+          <button class="save-btn" onclick="savePushoverSettings()" style="margin-top:0">Save Keys</button>
+          <button class="test-btn" id="testPushoverBtn" onclick="testPushover()">&#128242; Send Test</button>
+          <span class="status-msg" id="pushoverMsg" style="display:none"></span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="card">
+        <h2>&#128200; Tracking Stats</h2>
+        <div id="statsContent">Loading...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ MILITARY LOG TAB ════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-military" role="tabpanel" aria-label="Military Log">
+    <div class="card">
+      <h2>&#9876;&#65039; Military Contact Log</h2>
+      <div class="table-wrap">
+        <table class="ac-table" id="milTable">
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">ICAO</th>
+              <th scope="col">Callsign</th>
+              <th scope="col">Type</th>
+              <th scope="col">Reg</th>
+              <th scope="col">Alt (ft)</th>
+              <th scope="col">Spd (kts)</th>
+              <th scope="col">Dist (NM)</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="milBody"></tbody>
+        </table>
+      </div>
+      <div id="milEmpty" class="empty-state" style="display:none;">
+        <div class="icon">&#128752;</div>
+        <p>No military contacts logged yet. They'll appear here automatically.</p>
+      </div>
+      <div style="text-align:center; margin-top:1rem;">
+        <button class="refresh-btn" id="milPrev" onclick="milPage(-1)" style="margin-right:0.5rem">&larr; Prev</button>
+        <span id="milPageInfo" style="font-size:0.8rem; color:var(--text-muted)">Page 1</span>
+        <button class="refresh-btn" id="milNext" onclick="milPage(1)" style="margin-left:0.5rem">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WATCHLIST TAB ═══════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-watchlist" role="tabpanel" aria-label="Watchlist">
+
+    <!-- Section 1: Watchlist Manager (default open) -->
+    <div class="card">
+      <div class="accordion-header open" onclick="toggleAccordion(this)">
+        <h2>&#128065; Watchlist Manager</h2>
+        <span class="chevron">&#9654;</span>
+      </div>
+      <div class="accordion-body open">
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
+          Add aircraft to your watchlist. Pushover alert fires when they're detected.
+        </p>
+
+        <!-- Add Form -->
+        <div class="watchlist-add">
+          <select id="watchType">
+            <option value="hex">Hex Code</option>
+            <option value="type">Type Code</option>
+            <option value="callsign">Callsign</option>
+            <option value="registration">Registration</option>
+          </select>
+          <input type="text" id="watchValue" placeholder="e.g., ae1234 or B52 or EVAC or N30397" />
+          <input type="text" id="watchLabel" placeholder="Label (optional)" style="max-width:200px" />
+          <button class="add-btn" onclick="addToWatchlist()">+ Add</button>
+        </div>
+
+        <!-- Watchlist Table -->
+        <div class="table-wrap">
+          <table class="ac-table" id="watchTable">
+            <thead>
+              <tr>
+                <th scope="col">Match</th>
+                <th scope="col">Value</th>
+                <th scope="col">Label</th>
+                <th scope="col">Alerts</th>
+                <th scope="col">Last Seen</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="watchBody"></tbody>
+          </table>
+        </div>
+        <div id="watchEmpty" class="empty-state" style="display:none;">
+          <div class="icon">&#128065;</div>
+          <p>No aircraft on your watchlist yet. Add some above!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Squawk Alerts -->
+    <div class="card">
+      <div class="accordion-header open" onclick="toggleAccordion(this)">
+        <h2>&#9888;&#65039; Squawk Alerts
+          <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;margin-left:0.5rem">
+            7500 HIJACK · 7600 NORDO · 7700 EMERGENCY · 7777 INTERCEPT
+          </span>
+        </h2>
+        <span class="chevron">&#9654;</span>
+      </div>
+      <div class="accordion-body open">
+        <div class="table-wrap">
+          <table class="ac-table" id="squawkTable">
+            <thead>
+              <tr>
+                <th scope="col">Time</th>
+                <th scope="col">Callsign</th>
+                <th scope="col">Type</th>
+                <th scope="col">Squawk</th>
+                <th scope="col">Distance</th>
+                <th scope="col">Alt (ft)</th>
+                <th scope="col">Link</th>
+              </tr>
+            </thead>
+            <tbody id="squawkBody"></tbody>
+          </table>
+        </div>
+        <div id="squawkEmpty" class="empty-state" style="display:none;">
+          <div class="icon">&#128994;</div>
+          <p>No emergency squawk codes detected. You'll see 7500/7600/7700/7777 events here.</p>
+        </div>
+        <div style="margin-top:0.75rem;">
+          <button class="remove-btn" onclick="dismissAllSquawks()" style="font-size:0.75rem">
+            Dismiss All Squawk Alerts
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Recent Watchlist Alerts -->
+    <div class="card">
+      <div class="accordion-header open" onclick="toggleAccordion(this)">
+        <h2>&#128276; Recent Watchlist Alerts</h2>
+        <span class="chevron">&#9654;</span>
+      </div>
+      <div class="accordion-body open">
+        <div class="table-wrap">
+          <table class="ac-table" id="alertTable">
+            <thead>
+              <tr>
+                <th scope="col">Time</th>
+                <th scope="col">Callsign</th>
+                <th scope="col">Type</th>
+                <th scope="col">Distance</th>
+                <th scope="col">Watchlist Match</th>
+              </tr>
+            </thead>
+            <tbody id="alertBody"></tbody>
+          </table>
+        </div>
+        <div id="alertEmpty" class="empty-state" style="display:none;">
+          <div class="icon">&#128276;</div>
+          <p>No alerts yet. When watched aircraft are detected, alerts appear here.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+// CQ-5: Configurable API base — uses relative URLs by default, dev override via data attribute or port detection
+const API = document.documentElement.dataset.apiBase
+  || (window.location.port === '8080' ? `http://${window.location.hostname}:8081` : '');
+
+let countdownTimer = null;
+let countdownValue = 30;
+let currentSort = { field: 'distance_nm', dir: 'asc' };
+let milCurrentPage = 1;
+const AC_PAGE_SIZE = 50;
+let acCurrentPage = 1;
+
+// ── Tab switching (A11Y-6: keyboard accessible) ─────────────────────────
+const allTabs = Array.from(document.querySelectorAll('.tab'));
+function activateTab(tab) {
+  allTabs.forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+    t.setAttribute('tabindex', '-1');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  tab.setAttribute('aria-selected', 'true');
+  tab.setAttribute('tabindex', '0');
+  tab.focus();
+  document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+
+  if (tab.dataset.tab === 'military') loadMilitary();
+  if (tab.dataset.tab === 'watchlist') { Promise.all([loadWatchlist(), loadAlertHistory(), loadSquawkAlerts()]); }
+}
+allTabs.forEach(tab => {
+  tab.addEventListener('click', () => activateTab(tab));
+  tab.addEventListener('keydown', (e) => {
+    const idx = allTabs.indexOf(tab);
+    if (e.key === 'ArrowRight') { e.preventDefault(); activateTab(allTabs[(idx + 1) % allTabs.length]); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); activateTab(allTabs[(idx - 1 + allTabs.length) % allTabs.length]); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateTab(tab); }
+  });
+});
+
+// ── Sorting (ID-3: 3-state cycle null→asc→desc→null) ─────────────────────
+document.querySelectorAll('#aircraftTable th[data-sort]').forEach(th => {
+  th.setAttribute('tabindex', '0');
+  th.setAttribute('role', 'columnheader');
+  const sortHandler = () => {
+    const field = th.dataset.sort;
+    if (currentSort.field === field) {
+      if (currentSort.dir === 'asc') {
+        currentSort.dir = 'desc';
+      } else if (currentSort.dir === 'desc') {
+        currentSort = { field: 'distance_nm', dir: 'asc' }; // reset to default
+      }
+    } else {
+      currentSort = { field, dir: 'asc' };
+    }
+    updateSortArrows();
+    renderAircraft(lastAircraftData);
+  };
+  th.addEventListener('click', sortHandler);
+  th.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortHandler(); }
+  });
+});
+
+function updateSortArrows() {
+  document.querySelectorAll('#aircraftTable th[data-sort]').forEach(h => {
+    const arrow = h.querySelector('.sort-arrow');
+    if (h.dataset.sort === currentSort.field) {
+      arrow.textContent = currentSort.dir === 'asc' ? '\u25B2' : '\u25BC';
+      arrow.style.color = 'var(--cyan)';
+      arrow.style.opacity = '1';
+      h.setAttribute('aria-sort', currentSort.dir === 'asc' ? 'ascending' : 'descending');
+    } else {
+      arrow.textContent = '\u25B4';
+      arrow.style.color = '';
+      arrow.style.opacity = '0.4';
+      h.removeAttribute('aria-sort');
+    }
+  });
+}
+updateSortArrows();
+
+// ── Data Loading ─────────────────────────────────────────────────────────
+let lastAircraftData = [];
+let previousAircraftMap = {}; // hex -> {alt_baro, ground_speed, distance_nm} for pulse tracking
+
+async function loadDashboard() {
+  const tableWrap = document.querySelector('#panel-dashboard .table-wrap');
+  if (tableWrap && Object.keys(previousAircraftMap).length > 0) {
+    tableWrap.classList.add('table-refreshing');
+  }
+  try {
+    const [statusRes, acRes] = await Promise.all([
+      fetch(API + '/api/adsb/status'),
+      fetch(API + '/api/adsb/aircraft')
+    ]);
+    const status = await statusRes.json();
+    const acData = await acRes.json();
+
+    // Update status bar
+    const dot = document.getElementById('statusDot');
+    if (status.error) {
+      dot.className = 'status-dot error';
+      dot.setAttribute('aria-label', 'Connection status: Error');
+    } else if (status.lastFetch && (Date.now() - new Date(status.lastFetch).getTime()) > 120000) {
+      dot.className = 'status-dot stale';
+      dot.setAttribute('aria-label', 'Connection status: Stale');
+    } else {
+      dot.className = 'status-dot';
+      dot.setAttribute('aria-label', 'Connection status: OK');
+    }
+
+    document.getElementById('lastFetch').textContent = status.lastFetch
+      ? fmt24(status.lastFetch)
+      : '--';
+    document.getElementById('allRadiusDisplay').textContent = status.settings?.all_radius_nm || '5';
+    document.getElementById('milRadiusDisplay').textContent = status.settings?.mil_radius_nm || '50';
+    document.getElementById('squawkRadiusDisplay').textContent = status.settings?.squawk_radius_nm || '25';
+
+    countdownValue = Number(status.settings?.refresh_interval_sec) || 30;
+
+    // Pushover indicator
+    const pushDot = document.getElementById('pushoverDot');
+    const pushStatus = document.getElementById('pushoverStatus');
+    if (status.pushoverEnabled && status.pushoverConfigured) {
+      pushDot.className = 'pushover-dot active';
+      pushStatus.textContent = 'Pushover: on';
+    } else if (status.pushoverConfigured) {
+      pushDot.className = 'pushover-dot';
+      pushStatus.textContent = 'Pushover: off';
+    } else {
+      pushDot.className = 'pushover-dot';
+      pushStatus.textContent = 'Pushover: not set';
+    }
+
+    // Update stats
+    const allAircraft = acData.aircraft || [];
+    const milAircraft = allAircraft.filter(a => a.is_military);
+    document.getElementById('statTotal').textContent = allAircraft.length;
+    document.getElementById('statMil').textContent = milAircraft.length;
+
+    const totalAlerts = (status.activeAlerts || 0) + (status.activeSquawkAlerts || 0);
+    document.getElementById('statAlerts').textContent = totalAlerts;
+
+    // Alert badge on watchlist tab
+    const alertBadge = document.getElementById('alertBadge');
+    if (totalAlerts > 0) {
+      alertBadge.textContent = totalAlerts;
+      alertBadge.style.display = 'inline-block';
+      alertBadge.className = status.activeSquawkAlerts > 0 ? 'badge badge-squawk' : 'badge badge-alert';
+    } else {
+      alertBadge.style.display = 'none';
+    }
+
+    // Mil badge in tab
+    document.getElementById('milBadge').textContent = milAircraft.length;
+
+    // Aircraft table
+    lastAircraftData = allAircraft;
+    renderAircraft(allAircraft);
+    if (tableWrap) tableWrap.classList.remove('table-refreshing');
+
+    // Settings inputs
+    document.getElementById('settAllRadius').value = status.settings?.all_radius_nm || 5;
+    document.getElementById('settMilRadius').value = status.settings?.mil_radius_nm || 50;
+    document.getElementById('settSquawkRadius').value = status.settings?.squawk_radius_nm || 25;
+    document.getElementById('settRefresh').value = status.settings?.refresh_interval_sec || 30;
+
+    // Check alerts
+    checkAlerts(status);
+
+    // Total mil count removed from stats grid (IA-3)
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+    document.getElementById('statusDot').className = 'status-dot error';
+    document.getElementById('lastFetch').textContent = 'API Error';
+  }
+}
+
+async function loadMilCount() {
+  try {
+    const res = await fetch(API + '/api/adsb/stats');
+    const stats = await res.json();
+    document.getElementById('statMilTotal').textContent = stats.totalMil || 0;
+  } catch (err) { console.error('Load mil count error:', err); }
+}
+
+function renderAircraft(aircraft) {
+  const tbody = document.getElementById('aircraftBody');
+  if (!aircraft || aircraft.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:2rem">No aircraft in range</td></tr>';
+    return;
+  }
+
+  // Sort
+  const sorted = [...aircraft].sort((a, b) => {
+    let va = a[currentSort.field], vb = b[currentSort.field];
+    if (va == null && vb == null) return 0;
+    if (va == null) return currentSort.dir === 'asc' ? 1 : -1;
+    if (vb == null) return currentSort.dir === 'asc' ? -1 : 1;
+    if (typeof va === 'string') {
+      return currentSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    return currentSort.dir === 'asc' ? va - vb : vb - va;
+  });
+
+  const EMERGENCY_SQUAWKS = { '7500': 'HIJACK', '7600': 'NORDO', '7700': 'EMERGENCY', '7777': 'INTERCEPT' };
+
+  // P-4: Pagination for large lists
+  const totalAc = sorted.length;
+  const totalPages = Math.ceil(totalAc / AC_PAGE_SIZE);
+  if (acCurrentPage > totalPages) acCurrentPage = 1;
+  const startIdx = (acCurrentPage - 1) * AC_PAGE_SIZE;
+  const pageItems = sorted.slice(startIdx, startIdx + AC_PAGE_SIZE);
+
+  const frag = document.createDocumentFragment();
+  const newMap = {};
+
+  pageItems.forEach(ac => {
+    const milClass = ac.is_military ? 'mil' : '';
+    const isEmergency = ac.squawk && EMERGENCY_SQUAWKS[ac.squawk];
+    const rowClass = isEmergency ? 'squawk-row' : milClass;
+    const milBadge = ac.is_military ? '<span class="mil-badge">MIL</span> ' : '';
+    const alt = ac.alt_baro != null ? ac.alt_baro.toLocaleString() : '--';
+    const altClass = ac.alt_baro == null ? '' : (ac.alt_baro <= 0 ? 'alt-ground' : ac.alt_baro < 10000 ? 'alt-low' : ac.alt_baro <= 30000 ? 'alt-mid' : 'alt-high');
+    const spd = ac.ground_speed != null ? Math.round(ac.ground_speed) : '--';
+    const dist = ac.distance_nm != null ? ac.distance_nm.toFixed(1) : '--';
+    const distClass = ac.distance_nm == null ? '' : (ac.distance_nm < 1 ? 'dist-very-near' : ac.distance_nm < 5 ? 'dist-near' : '');
+    const dir = compassDir(ac.direction);
+    const callsign = ac.flight?.trim() || ac.hex?.toUpperCase() || '--';
+    const seen = ac.updated_at ? fmt24(ac.updated_at) : '--';
+    const hexCode = ac.hex?.toUpperCase() || '--';
+    const squawkDisplay = ac.squawk
+      ? (isEmergency
+          ? `<span class="squawk-badge squawk-${EMERGENCY_SQUAWKS[ac.squawk]}">${ac.squawk}</span>`
+          : esc(ac.squawk))
+      : '--';
+
+    // Track for pulse detection (ID-1)
+    const prev = previousAircraftMap[ac.hex];
+    const altChanged = prev && prev.alt_baro !== ac.alt_baro;
+    const spdChanged = prev && prev.ground_speed !== ac.ground_speed;
+    const distChanged = prev && prev.distance_nm !== ac.distance_nm;
+    newMap[ac.hex] = { alt_baro: ac.alt_baro, ground_speed: ac.ground_speed, distance_nm: ac.distance_nm };
+
+    const tr = document.createElement('tr');
+    tr.className = rowClass;
+    tr.innerHTML = `
+      <td style="font-size:0.72rem;color:var(--text-muted)">${seen}</td>
+      <td><span class="ac-callsign${ac.is_military ? ' mil-callsign' : ''}">${milBadge}${esc(callsign)}</span></td>
+      <td class="ac-type">${esc(ac.type_desc || ac.type_code || '--')}</td>
+      <td>${esc(ac.registration || '--')}</td>
+      <td class="ac-alt ${altClass}${altChanged ? ' data-updated' : ''}">${alt !== '--' ? alt + ' ft' : '--'}</td>
+      <td class="ac-speed${spdChanged ? ' data-updated' : ''}">${spd !== '--' ? spd + ' kt' : '--'}</td>
+      <td class="ac-dist ${distClass}${distChanged ? ' data-updated' : ''}">${dist !== '--' ? dist + ' ' + dir : '--'}</td>
+      <td>${squawkDisplay}</td>
+      <td>
+        <div class="mil-links">
+          ${(ac.type_desc || ac.type_code) ? `<a href="https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(ac.type_desc || ac.type_code)}" target="_blank" rel="noopener" class="mil-link wiki" title="Wikipedia">&#128214;</a>` : ''}
+          <a href="https://globe.adsb.fi/?icao=${esc(ac.hex)}" target="_blank" rel="noopener" class="mil-link track" title="Track on ADSB.fi">&#127760;</a>
+          <button class="watch-btn" onclick="quickWatch('${esc(ac.hex)}','${esc(ac.type_desc || ac.type_code || '')}')" title="Add to watchlist">&#128065;</button>
+        </div>
+      </td>`;
+    frag.appendChild(tr);
+  });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+  previousAircraftMap = newMap;
+
+  // P-4: Update pagination controls
+  const paginationEl = document.getElementById('acPagination');
+  if (totalPages > 1) {
+    paginationEl.style.display = 'block';
+    document.getElementById('acPageInfo').textContent = `Page ${acCurrentPage} of ${totalPages} (${totalAc} aircraft)`;
+    document.getElementById('acPrev').disabled = acCurrentPage <= 1;
+    document.getElementById('acNext').disabled = acCurrentPage >= totalPages;
+  } else {
+    paginationEl.style.display = 'none';
+  }
+
+  // Mobile card view (R-1) — use page items
+  const cardContainer = document.getElementById('aircraftCards');
+  if (cardContainer) {
+    cardContainer.innerHTML = pageItems.map(ac => {
+      const milClass = ac.is_military ? 'military' : '';
+      const callsign = ac.flight?.trim() || ac.hex?.toUpperCase() || '--';
+      const alt = ac.alt_baro != null ? ac.alt_baro.toLocaleString() + ' ft' : '--';
+      const spd = ac.ground_speed != null ? Math.round(ac.ground_speed) + ' kt' : '--';
+      const dist = ac.distance_nm != null ? ac.distance_nm.toFixed(1) + ' NM' : '--';
+      const dir = ac.direction != null ? Math.round(ac.direction) + '\u00B0' : '--';
+      const squawk = ac.squawk || '--';
+      return `<div class="aircraft-card ${milClass}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="card-callsign ${milClass}">${ac.is_military ? '<span class="mil-badge">MIL</span> ' : ''}${esc(callsign)}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-secondary)">${dist} ${dir}</span>
+        </div>
+        <div class="card-detail">${esc(ac.type_desc || ac.type_code || '--')} &middot; ${esc(ac.registration || '--')}</div>
+        <div class="card-detail">${alt} &middot; ${spd} &middot; SQ: ${esc(squawk)}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── Military Log ─────────────────────────────────────────────────────────
+async function loadMilitary() {
+  try {
+    const res = await fetch(API + `/api/adsb/military?page=${milCurrentPage}&limit=30`);
+    const data = await res.json();
+    const tbody = document.getElementById('milBody');
+    const empty = document.getElementById('milEmpty');
+
+    if (!data.contacts || data.contacts.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = data.contacts.map((c, i) => {
+      const time = fmt24(c.first_seen);
+      const lastTime = c.last_seen ? fmt24(c.last_seen) : '--';
+      const alt = c.alt_baro != null ? c.alt_baro.toLocaleString() : '--';
+      const altClass = c.alt_baro == null ? '' : (c.alt_baro <= 0 ? 'alt-ground' : c.alt_baro < 10000 ? 'alt-low' : c.alt_baro <= 30000 ? 'alt-mid' : 'alt-high');
+      const spd = c.ground_speed != null ? Math.round(c.ground_speed) : '--';
+      const dist = c.distance_nm != null ? c.distance_nm.toFixed(1) : '--';
+      const callsign = c.flight || c.callsign || c.hex?.toUpperCase() || '--';
+      const hexCode = c.hex?.toUpperCase() || '--';
+      const squawk = c.squawk || '--';
+      const heading = compassDir(c.direction);
+
+      return `<tr style="cursor:pointer" onclick="toggleMilExpand(${i})">
+        <td style="font-size:0.72rem">${time}</td>
+        <td style="font-size:0.72rem;color:var(--text-muted)">${esc(hexCode)}</td>
+        <td><span class="ac-callsign">${esc(callsign)}</span></td>
+        <td class="ac-type">${esc(c.type_desc || c.type_code || '--')}</td>
+        <td>${esc(c.registration || '--')}</td>
+        <td class="ac-alt ${altClass}">${alt !== '--' ? alt + ' ft' : '--'}</td>
+        <td class="ac-speed">${spd !== '--' ? spd + ' kt' : '--'}</td>
+        <td class="ac-dist">${dist !== '--' ? dist + ' NM' : '--'}</td>
+        <td>
+          <div class="mil-links">
+            ${safeUrl(c.wiki_url) ? `<a href="${esc(c.wiki_url)}" target="_blank" rel="noopener" class="mil-link wiki" title="Wikipedia" onclick="event.stopPropagation()">&#128214;</a>` : ''}
+            ${safeUrl(c.track_url) ? `<a href="${esc(c.track_url)}" target="_blank" rel="noopener" class="mil-link track" title="Track on ADSB.fi" onclick="event.stopPropagation()">&#127760;</a>` : ''}
+            <button class="watch-btn" onclick="event.stopPropagation();quickWatch('${esc(c.hex)}','${esc(c.type_desc || c.type_code || '')}')" title="Add to watchlist">&#128065;</button>
+          </div>
+        </td>
+      </tr>
+      <tr class="expand-row" id="milExpand-${i}" style="display:none">
+        <td colspan="9">
+          <div class="expand-content">
+            <div class="detail-grid">
+              <div class="detail-item"><label>First Seen</label><div class="val">${time}</div></div>
+              <div class="detail-item"><label>Last Seen</label><div class="val">${lastTime}</div></div>
+              <div class="detail-item"><label>Altitude</label><div class="val">${alt} ft</div></div>
+              <div class="detail-item"><label>Speed</label><div class="val">${spd} kt</div></div>
+              <div class="detail-item"><label>Closest Approach</label><div class="val">${dist} NM</div></div>
+              <div class="detail-item"><label>Squawk</label><div class="val">${esc(squawk)}</div></div>
+              <div class="detail-item"><label>Heading</label><div class="val">${esc(heading)}</div></div>
+              <div class="detail-item"><label>Hex</label><div class="val">${esc(hexCode)}</div></div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const totalPages = Math.ceil(data.total / data.limit);
+    document.getElementById('milPageInfo').textContent = `Page ${data.page} of ${totalPages}`;
+    document.getElementById('milPrev').disabled = data.page <= 1;
+    document.getElementById('milNext').disabled = data.page >= totalPages;
+  } catch (err) {
+    console.error('Military load error:', err);
+  }
+}
+
+let milExpandedRow = null;
+function toggleMilExpand(idx) {
+  const row = document.getElementById('milExpand-' + idx);
+  if (milExpandedRow !== null && milExpandedRow !== idx) {
+    const prev = document.getElementById('milExpand-' + milExpandedRow);
+    if (prev) prev.style.display = 'none';
+  }
+  if (row.style.display === 'none') {
+    row.style.display = 'table-row';
+    milExpandedRow = idx;
+  } else {
+    row.style.display = 'none';
+    milExpandedRow = null;
+  }
+}
+
+function milPage(delta) {
+  milCurrentPage = Math.max(1, milCurrentPage + delta);
+  loadMilitary();
+}
+
+// ── Watchlist ────────────────────────────────────────────────────────────
+async function loadWatchlist() {
+  try {
+    const res = await fetch(API + '/api/adsb/watchlist');
+    const data = await res.json();
+    const tbody = document.getElementById('watchBody');
+    const empty = document.getElementById('watchEmpty');
+
+    if (!data.watchlist || data.watchlist.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = data.watchlist.map(w => {
+      const lastSeen = w.last_seen ? fmt24(w.last_seen) : 'Never';
+      return `<tr>
+        <td><span class="mil-badge">${esc(w.match_type.toUpperCase())}</span></td>
+        <td><span class="ac-callsign">${esc(w.match_value)}</span></td>
+        <td>${esc(w.label || '--')}</td>
+        <td>${w.total_alerts || 0}</td>
+        <td style="font-size:0.72rem">${lastSeen}</td>
+        <td><button class="remove-btn" onclick="removeWatch(${w.id})">Remove</button></td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Watchlist load error:', err);
+  }
+}
+
+async function addToWatchlist() {
+  const type = document.getElementById('watchType').value;
+  const value = document.getElementById('watchValue').value.trim();
+  const label = document.getElementById('watchLabel').value.trim();
+  if (!value) return;
+
+  try {
+    const res = await fetch(API + '/api/adsb/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ match_type: type, match_value: value, label: label || null })
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    document.getElementById('watchValue').value = '';
+    document.getElementById('watchLabel').value = '';
+    loadWatchlist();
+  } catch (err) {
+    console.error('Add watchlist error:', err);
+  }
+}
+
+async function removeWatch(id) {
+  try {
+    await fetch(API + `/api/adsb/watchlist/${id}`, { method: 'DELETE' });
+    loadWatchlist();
+  } catch (err) {
+    console.error('Remove watchlist error:', err);
+  }
+}
+
+async function quickWatch(hex, desc) {
+  try {
+    const res = await fetch(API + '/api/adsb/watchlist/add-from-contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hex, label: desc ? `${desc} (${hex})` : hex })
+    });
+    const data = await res.json();
+    if (data.error) showToast(data.error, 'error');
+    else showToast(`Added ${hex} to watchlist!`);
+  } catch (err) {
+    console.error('Quick watch error:', err);
+  }
+}
+
+// ── Squawk Alerts ─────────────────────────────────────────────────────────
+async function loadSquawkAlerts() {
+  try {
+    const [activeRes, dismissedRes] = await Promise.all([
+      fetch(API + '/api/adsb/squawk-alerts?dismissed=false'),
+      fetch(API + '/api/adsb/squawk-alerts?dismissed=true'),
+    ]);
+    const activeData = await activeRes.json();
+    const dismissedData = await dismissedRes.json();
+    const all = [...(activeData.alerts || []), ...(dismissedData.alerts || [])];
+
+    const tbody = document.getElementById('squawkBody');
+    const empty = document.getElementById('squawkEmpty');
+
+    if (all.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = all.slice(0, 50).map(a => {
+      const time = fmt24(a.detected_at);
+      const callsign = a.flight || a.hex?.toUpperCase() || '--';
+      const dist = a.distance_nm != null ? a.distance_nm.toFixed(1) + ' NM' : '--';
+      const alt = a.alt_baro != null ? a.alt_baro.toLocaleString() : '--';
+      const isActive = !a.dismissed;
+      return `<tr class="${isActive ? 'squawk-row' : ''}">
+        <td style="font-size:0.72rem${isActive ? ';color:var(--red)' : ''}">${time}</td>
+        <td><span class="ac-callsign">${esc(callsign)}</span></td>
+        <td class="ac-type">${esc(a.type_code || '--')}</td>
+        <td><span class="squawk-badge squawk-${esc(a.squawk_type)}">${esc(a.squawk)} ${esc(a.squawk_type)}</span></td>
+        <td class="ac-dist">${dist}</td>
+        <td class="ac-alt">${alt}</td>
+        <td>
+          <a href="https://globe.adsb.fi/?icao=${esc(a.hex)}" target="_blank" rel="noopener" class="mil-link track">&#127760;</a>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Squawk alerts load error:', err);
+  }
+}
+
+async function dismissAllSquawks() {
+  try {
+    await fetch(API + '/api/adsb/squawk-alerts/dismiss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ all: true })
+    });
+    loadSquawkAlerts();
+  } catch (err) { console.error('Dismiss squawks error:', err); }
+}
+
+// ── Alerts ───────────────────────────────────────────────────────────────
+function checkAlerts(status) {
+  const banner = document.getElementById('alertBanner');
+  const text = document.getElementById('alertText');
+  const icon = document.getElementById('alertIcon');
+
+  const hasSquawk = (status?.activeSquawkAlerts || 0) > 0;
+  const hasWatchlist = (status?.activeAlerts || 0) > 0;
+
+  if (hasSquawk || hasWatchlist) {
+    // Squawk takes priority in display
+    if (hasSquawk) {
+      banner.classList.add('visible', 'squawk-active');
+      icon.textContent = '🚨';
+      text.textContent = `SQUAWK ALERT: ${status.activeSquawkAlerts} active emergency squawk${status.activeSquawkAlerts > 1 ? 's' : ''} detected`;
+      if (hasWatchlist) text.textContent += ` · ${status.activeAlerts} watchlist alert${status.activeAlerts > 1 ? 's' : ''}`;
+    } else {
+      banner.classList.add('visible');
+      banner.classList.remove('squawk-active');
+      icon.textContent = '⚠️';
+      text.textContent = `WATCHLIST ALERT: ${status.activeAlerts} active alert${status.activeAlerts > 1 ? 's' : ''}`;
+    }
+  } else {
+    banner.classList.remove('visible', 'squawk-active');
+  }
+}
+
+async function dismissAllAlerts() {
+  try {
+    await Promise.all([
+      fetch(API + '/api/adsb/alerts/dismiss', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true })
+      }),
+      fetch(API + '/api/adsb/squawk-alerts/dismiss', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true })
+      }),
+    ]);
+    document.getElementById('alertBanner').classList.remove('visible', 'squawk-active');
+    loadDashboard();
+  } catch (err) { console.error('Dismiss alerts error:', err); }
+}
+
+async function loadAlertHistory() {
+  try {
+    const res = await fetch(API + '/api/adsb/alerts?dismissed=true');
+    const data = await res.json();
+    const tbody = document.getElementById('alertBody');
+    const empty = document.getElementById('alertEmpty');
+
+    const activeRes = await fetch(API + '/api/adsb/alerts?dismissed=false');
+    const activeData = await activeRes.json();
+    const allAlerts = [...(activeData.alerts || []), ...(data.alerts || [])];
+
+    if (allAlerts.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = allAlerts.slice(0, 50).map(a => {
+      const time = fmt24(a.detected_at);
+      return `<tr>
+        <td style="font-size:0.72rem">${time}</td>
+        <td><span class="ac-callsign">${esc(a.flight || a.hex)}</span></td>
+        <td>${esc(a.type_desc || a.type_code || '--')}</td>
+        <td class="ac-dist">${a.distance_nm?.toFixed(1) || '--'} NM</td>
+        <td>${esc(a.watchlist_label || a.match_value || '--')}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Alert history error:', err);
+  }
+}
+
+// ── Pushover Settings ─────────────────────────────────────────────────────
+async function loadPushoverSettings() {
+  // Keys are masked in the status API — just show enable state
+  try {
+    const res = await fetch(API + '/api/adsb/status');
+    const status = await res.json();
+    document.getElementById('settPushoverEnabled').checked = status.pushoverEnabled;
+    // Don't pre-fill keys since they're masked server-side — let user re-enter if needed
+  } catch (err) { console.error('Load pushover settings error:', err); }
+}
+
+async function savePushoverSettings() {
+  const userKey = document.getElementById('settPushoverUserKey').value.trim();
+  const appToken = document.getElementById('settPushoverAppToken').value.trim();
+
+  if (!userKey || !appToken) {
+    showPushoverMsg('Enter both User Key and App Token', false);
+    return;
+  }
+
+  try {
+    await fetch(API + '/api/adsb/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pushover_user_key: userKey, pushover_app_token: appToken })
+    });
+    showPushoverMsg('Keys saved!', true);
+    document.getElementById('settPushoverUserKey').value = '';
+    document.getElementById('settPushoverAppToken').value = '';
+  } catch (err) {
+    showPushoverMsg('Save failed: ' + err.message, false);
+  }
+}
+
+async function savePushoverEnabled() {
+  const enabled = document.getElementById('settPushoverEnabled').checked ? '1' : '0';
+  try {
+    await fetch(API + '/api/adsb/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pushover_enabled: enabled })
+    });
+    loadDashboard();
+  } catch (err) { console.error('Save pushover enabled error:', err); }
+}
+
+async function testPushover() {
+  const btn = document.getElementById('testPushoverBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch(API + '/api/adsb/pushover/test', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      showPushoverMsg('Test sent! Check your phone.', true);
+    } else {
+      showPushoverMsg(data.error || 'Test failed', false);
+    }
+  } catch (err) {
+    showPushoverMsg('Error: ' + err.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📱 Send Test';
+  }
+}
+
+function showPushoverMsg(msg, ok) {
+  const el = document.getElementById('pushoverMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + (ok ? 'ok' : 'err');
+  el.style.display = 'inline-block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+// ── Settings ─────────────────────────────────────────────────────────────
+async function saveTrackingSettings() {
+  const settings = {
+    all_radius_nm: document.getElementById('settAllRadius').value,
+    mil_radius_nm: document.getElementById('settMilRadius').value,
+    squawk_radius_nm: document.getElementById('settSquawkRadius').value,
+    refresh_interval_sec: document.getElementById('settRefresh').value
+  };
+
+  try {
+    const res = await fetch(API + '/api/adsb/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Settings saved! Changes take effect on next refresh.');
+      loadDashboard();
+    }
+  } catch (err) {
+    console.error('Save settings error:', err);
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(API + '/api/adsb/stats');
+    const stats = await res.json();
+
+    let html = `
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val">${stats.totalMil}</div><div class="stat-label">Total Contacts</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.uniqueHex}</div><div class="stat-label">Unique Aircraft</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.uniqueTypes}</div><div class="stat-label">Aircraft Types</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.todayMil}</div><div class="stat-label">Last 24h</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.totalSquawkAlerts || 0}</div><div class="stat-label">Squawk Events</div></div>
+      </div>`;
+
+    if (stats.topTypes && stats.topTypes.length > 0) {
+      html += '<h3 style="font-size:0.85rem;color:var(--text-secondary);margin:1rem 0 0.5rem">Top Military Types</h3>';
+      html += '<table class="ac-table"><thead><tr><th>Type</th><th>Description</th><th>Count</th></tr></thead><tbody>';
+      for (const t of stats.topTypes) {
+        html += `<tr><td class="ac-callsign">${esc(t.type_code)}</td><td>${esc(t.type_desc || '--')}</td><td>${t.count}</td></tr>`;
+      }
+      html += '</tbody></table>';
+    }
+
+    document.getElementById('statsContent').innerHTML = html;
+  } catch (err) {
+    document.getElementById('statsContent').innerHTML = '<p style="color:var(--text-muted)">Could not load stats.</p>';
+  }
+}
+
+// ── Accordion Toggle (IA-2) ──────────────────────────────────────────
+function toggleAccordion(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── Settings Toggle (IA-1) ───────────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settingsCollapse');
+  const btn = document.getElementById('settingsToggle');
+  panel.classList.toggle('open');
+  btn.classList.toggle('active');
+  const isOpen = panel.classList.contains('open');
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  if (isOpen) {
+    loadStats();
+    loadPushoverSettings();
+  }
+}
+
+// ── Manual Refresh ───────────────────────────────────────────────────────
+let refreshDebounce = false;
+async function manualRefresh() {
+  if (refreshDebounce) return;
+  refreshDebounce = true;
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  try {
+    await fetch(API + '/api/adsb/fetch', { method: 'POST' });
+    await loadDashboard();
+    nextRefreshAt = Date.now() + countdownValue * 1000;
+  } finally {
+    btn.classList.remove('spinning');
+    btn.disabled = false;
+    setTimeout(() => { refreshDebounce = false; }, 2000);
+  }
+}
+
+// ── Countdown & Auto-refresh ─────────────────────────────────────────────
+let nextRefreshAt = Date.now() + countdownValue * 1000;
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  nextRefreshAt = Date.now() + countdownValue * 1000;
+  countdownTimer = setInterval(async () => {
+    const remaining = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
+    document.getElementById('statCountdown').textContent = remaining + 's';
+    if (remaining <= 0) {
+      nextRefreshAt = Date.now() + countdownValue * 1000;
+      await loadDashboard();
+    }
+  }, 1000);
+}
+
+// ── Toast Notifications (ID-5) ───────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => { toast.classList.add('visible'); });
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+// DV-1: Compass direction with Unicode arrows
+function compassDir(deg) {
+  if (deg == null) return '--';
+  const dirs = [
+    { label: 'N', arrow: '\u2191' },
+    { label: 'NE', arrow: '\u2197' },
+    { label: 'E', arrow: '\u2192' },
+    { label: 'SE', arrow: '\u2198' },
+    { label: 'S', arrow: '\u2193' },
+    { label: 'SW', arrow: '\u2199' },
+    { label: 'W', arrow: '\u2190' },
+    { label: 'NW', arrow: '\u2196' }
+  ];
+  const idx = Math.round(deg / 45) % 8;
+  return dirs[idx].label + ' ' + dirs[idx].arrow;
+}
+
+function safeUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  return url.startsWith('https://') || url.startsWith('http://');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmt24(dateStr) {
+  if (!dateStr) return '--';
+  // SQLite datetime() is UTC but has no 'Z' suffix — add it for correct parsing
+  const normalized = String(dateStr).endsWith('Z') ? dateStr : dateStr + 'Z';
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return '--';
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const dy = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${mo}-${dy} ${hh}:${mm}:${ss}`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+// A11Y-7: addEventListener for key static buttons
+document.getElementById('refreshBtn').addEventListener('click', manualRefresh);
+document.getElementById('settingsToggle').addEventListener('click', toggleSettings);
+document.getElementById('alertDismissBtn').addEventListener('click', dismissAllAlerts);
+document.getElementById('acPrev').addEventListener('click', () => { acCurrentPage = Math.max(1, acCurrentPage - 1); renderAircraft(lastAircraftData); });
+document.getElementById('acNext').addEventListener('click', () => { acCurrentPage++; renderAircraft(lastAircraftData); });
+
+loadDashboard();
+startCountdown();
+</script>
+</body>
+</html>

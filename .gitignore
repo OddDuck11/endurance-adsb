@@ -1,0 +1,38 @@
+# Database
+*.db
+*.db-wal
+*.db-shm
+*.db.bak
+data/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Dependencies
+node_modules/
+bun.lockb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*.bak
+*.backup
+*.deprecated
+
+# Temporary
+*.tmp
+*.temp

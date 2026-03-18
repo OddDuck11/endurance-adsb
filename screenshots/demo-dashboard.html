@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADSB Tracker - Dashboard Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1220;
+      --bg-secondary: #141c2c;
+      --bg-tertiary: #1c2638;
+      --text-primary: #f0f2f5;
+      --text-secondary: #c0c8d4;
+      --text-muted: #8a919d;
+      --cyan: #12c2e9;
+      --purple: #c471ed;
+      --pink: #ff6b9d;
+      --magenta: #e879f9;
+      --blue: #6BB6FF;
+      --orange: #F39C12;
+      --teal: #2dd4bf;
+      --red: #ef4444;
+      --green: #22c55e;
+      --border: rgba(255, 255, 255, 0.08);
+      --mil-accent: #F39C12;
+      --radar-green: #22c55e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Nav */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .top-nav a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; }
+    .top-nav a:hover { color: var(--cyan); }
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-weight: 700; font-size: 1.1rem; color: var(--cyan) !important;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    .tab {
+      padding: 0.75rem 1.25rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .tab .badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .badge-mil { background: rgba(243, 156, 18, 0.2); color: var(--orange); }
+
+    /* Container */
+    .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Status Bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .status-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    .status-item .val { color: var(--text-primary); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .refresh-btn {
+      background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--cyan);
+      padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+      transition: all 0.2s; margin-left: auto;
+    }
+    .refresh-btn:hover { background: rgba(18, 194, 233, 0.1); border-color: var(--cyan); }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem; margin-bottom: 1rem;
+    }
+    .stat-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.75rem 1rem; text-align: center;
+    }
+    .stat-card .stat-val {
+      font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+    }
+    .stat-card .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card.mil .stat-val { color: var(--orange); }
+    .stat-card.alert .stat-val { color: var(--pink); }
+    .stat-card.refresh .stat-val { color: var(--radar-green); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 {
+      font-size: 1rem; font-weight: 600; color: var(--cyan);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    /* Aircraft Table */
+    .ac-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .ac-table th {
+      text-align: left;
+      padding: 0.4rem 0.4rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .ac-table td {
+      padding: 0.4rem 0.4rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .ac-table tr:hover { background: var(--bg-tertiary); }
+    .ac-table tr.mil {
+      border-left: 3px solid var(--orange);
+      background: rgba(243, 156, 18, 0.08);
+    }
+    .ac-table tr.mil:hover {
+      background: rgba(243, 156, 18, 0.12);
+    }
+    .ac-table tr.mil td:first-child { padding-left: calc(0.6rem - 3px); }
+    .mil-badge {
+      display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(243, 156, 18, 0.15); color: var(--orange);
+      border: 1px solid rgba(243, 156, 18, 0.3);
+      font-family: 'Inter', sans-serif;
+    }
+    .ac-callsign { color: var(--cyan); font-weight: 600; }
+    .ac-callsign.mil-callsign { color: var(--orange); }
+    .ac-type { color: var(--text-secondary); }
+    .ac-alt { color: var(--text-primary); }
+    .ac-speed { color: var(--blue); }
+    .ac-dist { color: var(--purple); }
+
+    .alt-low { color: var(--teal); }
+    .alt-mid { color: var(--blue); }
+    .alt-high { color: var(--purple); }
+
+    .table-wrap { overflow-x: auto; }
+
+    /* Radar sweep */
+    .radar-sweep {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--teal);
+      position: relative;
+      opacity: 0.8;
+    }
+    .radar-sweep::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 8px; height: 1.5px;
+      background: var(--teal);
+      transform-origin: left center;
+      animation: radar-sweep 5s linear infinite;
+    }
+    @keyframes radar-sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* CRT Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+      );
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 0.75rem; }
+      .status-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .ac-table { font-size: 0.72rem; }
+      .ac-table td, .ac-table th { padding: 0.4rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="top-nav">
+  <a href="#" class="nav-brand">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+    ADSB Tracker
+  </a>
+  <a href="#">&larr; Portal</a>
+</nav>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <div class="tab active">
+    <span class="radar-sweep"></span> Dashboard
+  </div>
+  <div class="tab">
+    &#9876;&#65039; Military Log <span class="badge badge-mil">1</span>
+  </div>
+  <div class="tab">
+    &#128269; Watchlist
+  </div>
+  <div class="tab">
+    &#9881;&#65039; Settings
+  </div>
+</div>
+
+<div class="container">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      <span class="val">Live</span>
+    </div>
+    <div class="status-item">
+      Aircraft: <span class="val">4</span>
+    </div>
+    <div class="status-item">
+      Military: <span class="val" style="color: var(--orange);">1</span>
+    </div>
+    <div class="status-item">
+      Last: <span class="val">just now</span>
+    </div>
+    <button class="refresh-btn">&#8635; Refresh</button>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val">6</div>
+      <div class="stat-label">Tracked</div>
+    </div>
+    <div class="stat-card mil">
+      <div class="stat-val">1</div>
+      <div class="stat-label">Military</div>
+    </div>
+    <div class="stat-card alert">
+      <div class="stat-val">0</div>
+      <div class="stat-label">Alerts</div>
+    </div>
+    <div class="stat-card refresh">
+      <div class="stat-val">5s</div>
+      <div class="stat-label">Refresh</div>
+    </div>
+  </div>
+
+  <!-- Aircraft Table -->
+  <div class="card">
+    <h2>&#9992;&#65039; Live Aircraft</h2>
+    <div class="table-wrap">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th>Callsign</th>
+            <th>Type</th>
+            <th>Operator</th>
+            <th>Alt (ft)</th>
+            <th>Speed (kts)</th>
+            <th>Dist (NM)</th>
+            <th class="hide-mobile">Track</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="ac-callsign">SWA890</span></td>
+            <td class="ac-type">B737</td>
+            <td>Southwest Airlines</td>
+            <td class="ac-alt alt-high">35,025</td>
+            <td class="ac-speed">438</td>
+            <td class="ac-dist">12.4</td>
+            <td class="hide-mobile">247&deg;</td>
+          </tr>
+          <tr>
+            <td><span class="ac-callsign">UAL1234</span></td>
+            <td class="ac-type">A320</td>
+            <td>United Airlines</td>
+            <td class="ac-alt alt-high">37,000</td>
+            <td class="ac-speed">461</td>
+            <td class="ac-dist">28.7</td>
+            <td class="hide-mobile">183&deg;</td>
+          </tr>
+          <tr class="mil">
+            <td><span class="ac-callsign mil-callsign">RCH1234</span> <span class="mil-badge">MIL</span></td>
+            <td class="ac-type">C130</td>
+            <td style="color: var(--orange);">C-130J Hercules</td>
+            <td class="ac-alt alt-mid">22,500</td>
+            <td class="ac-speed">290</td>
+            <td class="ac-dist">8.3</td>
+            <td class="hide-mobile">315&deg;</td>
+          </tr>
+          <tr>
+            <td><span class="ac-callsign">N12345</span></td>
+            <td class="ac-type">C172</td>
+            <td>General Aviation</td>
+            <td class="ac-alt alt-low">4,500</td>
+            <td class="ac-speed">112</td>
+            <td class="ac-dist">3.1</td>
+            <td class="hide-mobile">090&deg;</td>
+          </tr>
+          <tr>
+            <td><span class="ac-callsign">DAL567</span></td>
+            <td class="ac-type">B757</td>
+            <td>Delta Air Lines</td>
+            <td class="ac-alt alt-high">39,000</td>
+            <td class="ac-speed">475</td>
+            <td class="ac-dist">41.2</td>
+            <td class="hide-mobile">022&deg;</td>
+          </tr>
+          <tr>
+            <td><span class="ac-callsign">AAL4421</span></td>
+            <td class="ac-type">A321</td>
+            <td>American Airlines</td>
+            <td class="ac-alt alt-high">33,000</td>
+            <td class="ac-speed">449</td>
+            <td class="ac-dist">19.6</td>
+            <td class="hide-mobile">156&deg;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
