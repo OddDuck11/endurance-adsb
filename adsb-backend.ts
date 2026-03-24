@@ -105,6 +105,47 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_squawk_detected ON squawk_alerts(detected_at);
   CREATE INDEX IF NOT EXISTS idx_squawk_dismissed ON squawk_alerts(dismissed);
 
+  CREATE TABLE IF NOT EXISTS track_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hex TEXT NOT NULL,
+    lat REAL,
+    lon REAL,
+    alt_baro INTEGER,
+    alt_geom INTEGER,
+    ground_speed REAL,
+    track REAL,
+    distance_nm REAL,
+    is_military INTEGER DEFAULT 0,
+    timestamp DATETIME DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_track_hex_ts ON track_history(hex, timestamp);
+  CREATE INDEX IF NOT EXISTS idx_track_ts ON track_history(timestamp);
+
+  CREATE TABLE IF NOT EXISTS orbit_detections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hex TEXT NOT NULL,
+    flight TEXT,
+    type_code TEXT,
+    type_desc TEXT,
+    owner_operator TEXT,
+    center_lat REAL,
+    center_lon REAL,
+    radius_nm REAL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME DEFAULT (datetime('now')),
+    orbit_count INTEGER DEFAULT 1,
+    min_alt INTEGER,
+    max_alt INTEGER,
+    distance_nm REAL,
+    active INTEGER DEFAULT 1,
+    notified INTEGER DEFAULT 0
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_orbit_hex ON orbit_detections(hex);
+  CREATE INDEX IF NOT EXISTS idx_orbit_active ON orbit_detections(active);
+  CREATE INDEX IF NOT EXISTS idx_orbit_start ON orbit_detections(start_time);
+
   CREATE TABLE IF NOT EXISTS aircraft_cache (
     hex TEXT PRIMARY KEY,
     flight TEXT,
@@ -164,16 +205,23 @@ function getSettings(): Record<string, string> {
 // ── Database Cleanup (TTL) ──────────────────────────────────────────────────
 
 function cleanupOldRecords(): void {
-  const tables = ["military_contacts", "watchlist_alerts", "squawk_alerts"];
+  const tables = ["military_contacts", "watchlist_alerts", "squawk_alerts", "track_history"];
   for (const table of tables) {
-    const timestampCol = table === "military_contacts" ? "first_seen" : "detected_at";
+    const timestampCol = table === "military_contacts" ? "first_seen" : table === "track_history" ? "timestamp" : "detected_at";
+    const ttlDays = table === "track_history" ? 30 : 90;
     const result = db.prepare(
-      `DELETE FROM ${table} WHERE ${timestampCol} < datetime('now', '-90 days')`
+      `DELETE FROM ${table} WHERE ${timestampCol} < datetime('now', '-${ttlDays} days')`
     ).run();
     if (result.changes > 0) {
       console.log(`[Cleanup] Removed ${result.changes} old rows from ${table}`);
     }
   }
+
+  // Mark stale orbits as inactive (no update in 10 minutes)
+  db.prepare("UPDATE orbit_detections SET active = 0 WHERE active = 1 AND end_time < datetime('now', '-10 minutes')").run();
+  // Clean old orbit detections
+  const oldOrbits = db.prepare("DELETE FROM orbit_detections WHERE start_time < datetime('now', '-90 days')").run();
+  if (oldOrbits.changes > 0) console.log(`[Cleanup] Removed ${oldOrbits.changes} old orbit detections`);
 
   // Clean dismissed alerts older than 30 days
   const dismissedCleanup = db.prepare(
@@ -367,6 +415,132 @@ const stmtWatchInsertAlert = db.prepare(`INSERT INTO watchlist_alerts (watchlist
 const stmtSquawkRecent = db.prepare("SELECT id FROM squawk_alerts WHERE hex = ? AND squawk = ? AND detected_at > datetime('now', '-15 minutes')");
 const stmtSquawkInsert = db.prepare(`INSERT INTO squawk_alerts (hex, flight, squawk, squawk_type, type_code, distance_nm, alt_baro) VALUES (?, ?, ?, ?, ?, ?, ?)`);
 
+// ── Track History & Orbit Detection ──────────────────────────────────────
+const stmtTrackInsert = db.prepare(`
+  INSERT INTO track_history (hex, lat, lon, alt_baro, alt_geom, ground_speed, track, distance_nm, is_military)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+const stmtTrackRecent = db.prepare(`
+  SELECT lat, lon, track, alt_baro, timestamp FROM track_history
+  WHERE hex = ? AND timestamp > datetime('now', '-15 minutes')
+  ORDER BY timestamp ASC
+`);
+const stmtOrbitActive = db.prepare("SELECT * FROM orbit_detections WHERE hex = ? AND active = 1");
+const stmtOrbitInsert = db.prepare(`
+  INSERT INTO orbit_detections (hex, flight, type_code, type_desc, owner_operator, center_lat, center_lon, radius_nm, start_time, end_time, orbit_count, min_alt, max_alt, distance_nm)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?)
+`);
+const stmtOrbitUpdate = db.prepare(`
+  UPDATE orbit_detections SET end_time = datetime('now'), orbit_count = ?, center_lat = ?, center_lon = ?,
+  radius_nm = ?, min_alt = ?, max_alt = ?, flight = COALESCE(?, flight) WHERE id = ?
+`);
+
+// Compute cumulative heading change from a series of track (heading) values
+function computeCumulativeHeadingChange(tracks: { track: number }[]): number {
+  let total = 0;
+  for (let i = 1; i < tracks.length; i++) {
+    let delta = tracks[i].track - tracks[i - 1].track;
+    // Normalize to [-180, 180]
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    total += delta;
+  }
+  return Math.abs(total);
+}
+
+// Compute centroid and average radius from positions
+function computeOrbitGeometry(positions: { lat: number; lon: number }[]): { centerLat: number; centerLon: number; radiusNm: number } {
+  const centerLat = positions.reduce((s, p) => s + p.lat, 0) / positions.length;
+  const centerLon = positions.reduce((s, p) => s + p.lon, 0) / positions.length;
+  // Approximate NM distance from centroid
+  const distances = positions.map(p => {
+    const dLat = (p.lat - centerLat) * 60; // degrees to NM
+    const dLon = (p.lon - centerLon) * 60 * Math.cos(centerLat * Math.PI / 180);
+    return Math.sqrt(dLat * dLat + dLon * dLon);
+  });
+  const radiusNm = distances.reduce((s, d) => s + d, 0) / distances.length;
+  return { centerLat, centerLon, radiusNm };
+}
+
+// Detect orbits for aircraft with sufficient track history
+function detectOrbits(allAc: ADSBAircraft[], pendingNotifications: Array<{ title: string; message: string; url: string; priority: number }>): void {
+  // Get all hex codes with recent track data (at least 5 minutes = ~10 points at 30s intervals)
+  const candidates = db.prepare(`
+    SELECT DISTINCT hex FROM track_history
+    WHERE timestamp > datetime('now', '-15 minutes')
+    GROUP BY hex HAVING COUNT(*) >= 10
+  `).all() as { hex: string }[];
+
+  for (const { hex } of candidates) {
+    const points = stmtTrackRecent.all(hex) as { lat: number; lon: number; track: number; alt_baro: number | null; timestamp: string }[];
+    // Filter out points without valid track data
+    const validPoints = points.filter(p => p.track != null && p.lat != null && p.lon != null);
+    if (validPoints.length < 10) continue;
+
+    const headingChange = computeCumulativeHeadingChange(validPoints);
+    const orbitCount = Math.floor(headingChange / 360);
+
+    if (headingChange < 270) {
+      // Not orbiting — mark any active orbit as complete
+      const active = stmtOrbitActive.get(hex) as any;
+      if (active) {
+        db.prepare("UPDATE orbit_detections SET active = 0, end_time = datetime('now') WHERE id = ?").run(active.id);
+        console.log(`[Orbit] Completed: ${hex} after ${active.orbit_count} orbits`);
+      }
+      continue;
+    }
+
+    // Aircraft is orbiting
+    const geo = computeOrbitGeometry(validPoints);
+    const alts = validPoints.filter(p => p.alt_baro != null).map(p => p.alt_baro!);
+    const minAlt = alts.length > 0 ? Math.min(...alts) : null;
+    const maxAlt = alts.length > 0 ? Math.max(...alts) : null;
+
+    // Look up aircraft info from cache
+    const acInfo = db.prepare("SELECT * FROM aircraft_cache WHERE hex = ?").get(hex) as any;
+    const flight = acInfo?.flight?.trim() || null;
+    const typeCode = acInfo?.type_code || null;
+    const typeDesc = acInfo?.type_desc || null;
+    const ownOp = acInfo?.owner_operator || null;
+    const distNm = acInfo?.distance_nm || null;
+
+    const activeOrbit = stmtOrbitActive.get(hex) as any;
+    if (activeOrbit) {
+      // Update existing orbit
+      stmtOrbitUpdate.run(
+        Math.max(orbitCount, activeOrbit.orbit_count), geo.centerLat, geo.centerLon,
+        Math.round(geo.radiusNm * 10) / 10, minAlt, maxAlt, flight, activeOrbit.id
+      );
+    } else {
+      // New orbit detected
+      const startTime = validPoints[0].timestamp;
+      stmtOrbitInsert.run(
+        hex, flight, typeCode, typeDesc, ownOp,
+        geo.centerLat, geo.centerLon, Math.round(geo.radiusNm * 10) / 10,
+        startTime, Math.max(1, orbitCount), minAlt, maxAlt, distNm
+      );
+
+      const callsign = flight || hex.toUpperCase();
+      const type = typeDesc || typeCode || "Unknown";
+      const dist = distNm != null ? `${distNm.toFixed(1)} NM` : "unknown distance";
+      const altStr = minAlt != null && maxAlt != null ? ` at ${minAlt}-${maxAlt}ft` : "";
+      const isMil = acInfo?.is_military === 1;
+
+      // Only send Pushover alerts for military aircraft orbits
+      if (isMil) {
+        const wikiUrl = getWikiUrl(typeCode || "", typeDesc || "");
+        pendingNotifications.push({
+          title: `ORBIT: ${callsign}`,
+          message: `${callsign} (${type}) orbiting${altStr}, ${dist} away. ${orbitCount}+ orbit(s).\n${wikiUrl}`,
+          url: getAdsbTrackUrl(hex),
+          priority: 0,
+        });
+      }
+      console.log(`[Orbit] Detected: ${callsign} (${type})${isMil ? ' [MIL]' : ''} orbiting at ${geo.centerLat.toFixed(3)}, ${geo.centerLon.toFixed(3)}, radius ${geo.radiusNm.toFixed(1)}NM`);
+    }
+  }
+}
+
 async function fetchADSBData(): Promise<void> {
   const settings = getSettings();
   const allRadius = Number(settings.all_radius_nm) || 5;
@@ -502,6 +676,18 @@ async function fetchADSBData(): Promise<void> {
         }
       }
 
+      // ── Track History (store every position report) ──────────────────────
+      for (const ac of allAc) {
+        if ((ac.dst ?? 999) > maxRadius) continue;
+        if (ac.lat == null || ac.lon == null) continue;
+        const isMil = (ac.dbFlags && (ac.dbFlags & 1)) ? 1 : 0;
+        const altBaro2 = typeof ac.alt_baro === 'number' ? ac.alt_baro : null;
+        stmtTrackInsert.run(
+          ac.hex, ac.lat, ac.lon, altBaro2, ac.alt_geom ?? null,
+          ac.gs ?? null, ac.track ?? null, ac.dst ?? null, isMil
+        );
+      }
+
       // ── Squawk Code Detection (inside transaction for atomicity) ──────────
       for (const ac of allAc) {
         if ((ac.dst ?? 999) > squawkRadius) continue;
@@ -531,6 +717,14 @@ async function fetchADSBData(): Promise<void> {
     });
 
     updateTransaction();
+
+    // ── Orbit Detection (runs after transaction so track_history is populated) ──
+    try {
+      detectOrbits(allAc, pendingNotifications);
+    } catch (err: any) {
+      console.error(`[Orbit] Detection error: ${err.message}`);
+    }
+
     currentAircraft = filteredAircraft;
     currentMilitary = militaryInRadius;
     // Cap in-memory arrays to prevent excessive memory at wide radius settings
@@ -608,6 +802,9 @@ Bun.serve({
       const activeSquawkAlerts = db.prepare(
         "SELECT COUNT(*) as count FROM squawk_alerts WHERE dismissed = 0"
       ).get() as { count: number };
+      const activeOrbits = db.prepare(
+        "SELECT COUNT(*) as count FROM orbit_detections WHERE active = 1"
+      ).get() as { count: number };
 
       // Mask pushover keys in status response — just show configured/not
       const safeSettings = { ...settings };
@@ -621,6 +818,7 @@ Bun.serve({
         militaryCount: currentMilitary.length,
         activeAlerts: activeAlerts.count,
         activeSquawkAlerts: activeSquawkAlerts.count,
+        activeOrbits: activeOrbits.count,
         pushoverConfigured: !!(settings.pushover_user_key && settings.pushover_app_token),
         pushoverEnabled: settings.pushover_enabled === "1",
         settings: safeSettings,
@@ -844,7 +1042,43 @@ Bun.serve({
         "SELECT type_code, type_desc, COUNT(*) as count FROM military_contacts WHERE type_code IS NOT NULL GROUP BY type_code ORDER BY count DESC LIMIT 10"
       ).all();
 
-      return Response.json({ totalMil, uniqueTypes, uniqueHex, todayMil, watchCount, topTypes, totalSquawkAlerts }, { headers: getCorsHeaders(req) });
+      const trackHistoryCount = (db.prepare("SELECT COUNT(*) as c FROM track_history").get() as any).c;
+      const totalOrbits = (db.prepare("SELECT COUNT(*) as c FROM orbit_detections").get() as any).c;
+      const activeOrbitCount = (db.prepare("SELECT COUNT(*) as c FROM orbit_detections WHERE active = 1").get() as any).c;
+
+      return Response.json({ totalMil, uniqueTypes, uniqueHex, todayMil, watchCount, topTypes, totalSquawkAlerts, trackHistoryCount, totalOrbits, activeOrbitCount }, { headers: getCorsHeaders(req) });
+    }
+
+    // ── GET /api/adsb/track/:hex ─────────────────────────────────────────
+    if (path.startsWith("/api/adsb/track/") && req.method === "GET") {
+      const hex = path.split("/").pop();
+      if (!hex || hex.length < 4) return Response.json({ error: "Invalid hex" }, { status: 400, headers: getCorsHeaders(req) });
+      const hours = Number(url.searchParams.get("hours")) || 24;
+      const maxHours = Math.min(hours, 720); // 30 days max
+      const points = db.prepare(
+        "SELECT lat, lon, alt_baro, alt_geom, ground_speed, track, distance_nm, is_military, timestamp FROM track_history WHERE hex = ? AND timestamp > datetime('now', '-' || ? || ' hours') ORDER BY timestamp ASC"
+      ).all(hex.toLowerCase(), maxHours);
+      return Response.json({ hex, points, count: points.length }, { headers: getCorsHeaders(req) });
+    }
+
+    // ── GET /api/adsb/orbits ──────────────────────────────────────────────
+    if (path === "/api/adsb/orbits" && req.method === "GET") {
+      const activeOnly = url.searchParams.get("active") === "true";
+      const limit = Math.min(Number(url.searchParams.get("limit")) || 50, 200);
+      let query = "SELECT * FROM orbit_detections";
+      if (activeOnly) query += " WHERE active = 1";
+      query += " ORDER BY start_time DESC LIMIT ?";
+      const orbits = db.prepare(query).all(limit) as any[];
+      const enriched = orbits.map(o => ({
+        ...o,
+        wiki_url: getWikiUrl(o.type_code, o.type_desc),
+        track_url: getAdsbTrackUrl(o.hex),
+        duration_min: o.start_time && o.end_time
+          ? Math.round((new Date(o.end_time + 'Z').getTime() - new Date(o.start_time + 'Z').getTime()) / 60000)
+          : null,
+      }));
+      const activeCount = (db.prepare("SELECT COUNT(*) as c FROM orbit_detections WHERE active = 1").get() as any).c;
+      return Response.json({ orbits: enriched, activeCount }, { headers: getCorsHeaders(req) });
     }
 
     // ── POST /api/adsb/watchlist/add-from-contact ────────────────────────

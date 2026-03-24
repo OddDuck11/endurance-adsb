@@ -648,6 +648,10 @@
         <div class="stat-val" id="statAlerts">-</div>
         <div class="stat-label">Alerts</div>
       </div>
+      <div class="stat-card" style="border-color: rgba(196, 113, 237, 0.3); cursor: pointer" onclick="goToOrbits()" title="View orbit detections">
+        <div class="stat-val" id="statOrbits" style="color: var(--purple)">-</div>
+        <div class="stat-label">Orbiting</div>
+      </div>
       <div class="stat-card refresh">
         <div class="stat-val" id="statCountdown">-</div>
         <div class="stat-label">Next Refresh</div>
@@ -791,6 +795,33 @@
         <button class="refresh-btn" id="milNext" onclick="milPage(1)" style="margin-left:0.5rem">Next &rarr;</button>
       </div>
     </div>
+
+    <!-- Orbit Detection Log -->
+    <div class="card">
+      <h2 style="color: var(--purple)">&#128256; Orbit Detections</h2>
+      <div class="table-wrap">
+        <table class="ac-table" id="orbitTable">
+          <thead>
+            <tr>
+              <th scope="col">Start</th>
+              <th scope="col">Callsign</th>
+              <th scope="col">Type</th>
+              <th scope="col">Orbits</th>
+              <th scope="col">Duration</th>
+              <th scope="col">Alt Range</th>
+              <th scope="col">Dist (NM)</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orbitBody"></tbody>
+        </table>
+      </div>
+      <div id="orbitEmpty" class="empty-state" style="display:none;">
+        <div class="icon">&#128256;</div>
+        <p>No orbit detections yet. Aircraft circling in your area will appear here.</p>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ WATCHLIST TAB ═══════════════════════════════════════════════ -->
@@ -925,6 +956,17 @@ let currentSort = { field: 'distance_nm', dir: 'asc' };
 let milCurrentPage = 1;
 const AC_PAGE_SIZE = 50;
 let acCurrentPage = 1;
+let activeOrbitHexes = {}; // hex -> {orbit_count, duration_min}
+
+function goToOrbits() {
+  const milTab = document.querySelector('.tab[data-tab="military"]');
+  if (milTab) activateTab(milTab);
+  // Scroll to orbit section after tab switch renders
+  setTimeout(() => {
+    const orbitTable = document.getElementById('orbitTable');
+    if (orbitTable) orbitTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
 
 // ── Tab switching (A11Y-6: keyboard accessible) ─────────────────────────
 const allTabs = Array.from(document.querySelectorAll('.tab'));
@@ -941,7 +983,7 @@ function activateTab(tab) {
   tab.focus();
   document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
 
-  if (tab.dataset.tab === 'military') loadMilitary();
+  if (tab.dataset.tab === 'military') { loadMilitary(); loadOrbitLog(); }
   if (tab.dataset.tab === 'watchlist') { Promise.all([loadWatchlist(), loadAlertHistory(), loadSquawkAlerts()]); }
 }
 allTabs.forEach(tab => {
@@ -1058,6 +1100,11 @@ async function loadDashboard() {
     const totalAlerts = (status.activeAlerts || 0) + (status.activeSquawkAlerts || 0);
     document.getElementById('statAlerts').textContent = totalAlerts;
 
+    // Orbit count
+    document.getElementById('statOrbits').textContent = status.activeOrbits || 0;
+    // Load active orbits for aircraft table badges
+    loadActiveOrbits();
+
     // Alert badge on watchlist tab
     const alertBadge = document.getElementById('alertBadge');
     if (totalAlerts > 0) {
@@ -1091,6 +1138,19 @@ async function loadDashboard() {
     document.getElementById('statusDot').className = 'status-dot error';
     document.getElementById('lastFetch').textContent = 'API Error';
   }
+}
+
+async function loadActiveOrbits() {
+  try {
+    const res = await fetch(API + '/api/adsb/orbits?active=true');
+    const data = await res.json();
+    activeOrbitHexes = {};
+    for (const o of (data.orbits || [])) {
+      activeOrbitHexes[o.hex] = { orbit_count: o.orbit_count, duration_min: o.duration_min };
+    }
+    // Re-render aircraft table with orbit badges
+    if (lastAircraftData.length > 0) renderAircraft(lastAircraftData);
+  } catch (err) { console.error('Load orbits error:', err); }
 }
 
 async function loadMilCount() {
@@ -1137,6 +1197,8 @@ function renderAircraft(aircraft) {
     const isEmergency = ac.squawk && EMERGENCY_SQUAWKS[ac.squawk];
     const rowClass = isEmergency ? 'squawk-row' : milClass;
     const milBadge = ac.is_military ? '<span class="mil-badge">MIL</span> ' : '';
+    const orbitInfo = activeOrbitHexes[ac.hex];
+    const orbitBadge = orbitInfo ? `<span class="mil-badge" style="background:rgba(196,113,237,0.15);color:var(--purple);border-color:rgba(196,113,237,0.3)">ORBIT ${orbitInfo.orbit_count}x</span> ` : '';
     const alt = ac.alt_baro != null ? ac.alt_baro.toLocaleString() : '--';
     const altClass = ac.alt_baro == null ? '' : (ac.alt_baro <= 0 ? 'alt-ground' : ac.alt_baro < 10000 ? 'alt-low' : ac.alt_baro <= 30000 ? 'alt-mid' : 'alt-high');
     const spd = ac.ground_speed != null ? Math.round(ac.ground_speed) : '--';
@@ -1163,7 +1225,7 @@ function renderAircraft(aircraft) {
     tr.className = rowClass;
     tr.innerHTML = `
       <td style="font-size:0.72rem;color:var(--text-muted)">${seen}</td>
-      <td><span class="ac-callsign${ac.is_military ? ' mil-callsign' : ''}">${milBadge}${esc(callsign)}</span></td>
+      <td><span class="ac-callsign${ac.is_military ? ' mil-callsign' : ''}">${milBadge}${orbitBadge}${esc(callsign)}</span></td>
       <td class="ac-type">${esc(ac.type_desc || ac.type_code || '--')}</td>
       <td>${esc(ac.registration || '--')}</td>
       <td class="ac-alt ${altClass}${altChanged ? ' data-updated' : ''}">${alt !== '--' ? alt + ' ft' : '--'}</td>
@@ -1308,6 +1370,57 @@ function toggleMilExpand(idx) {
 function milPage(delta) {
   milCurrentPage = Math.max(1, milCurrentPage + delta);
   loadMilitary();
+}
+
+// ── Orbit Log ────────────────────────────────────────────────────────────
+async function loadOrbitLog() {
+  try {
+    const res = await fetch(API + '/api/adsb/orbits?limit=50');
+    const data = await res.json();
+    const tbody = document.getElementById('orbitBody');
+    const empty = document.getElementById('orbitEmpty');
+
+    if (!data.orbits || data.orbits.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = data.orbits.map(o => {
+      const start = fmt24(o.start_time);
+      const callsign = o.flight || o.hex?.toUpperCase() || '--';
+      const type = o.type_desc || o.type_code || '--';
+      const orbits = o.orbit_count || 1;
+      const dur = o.duration_min != null ? o.duration_min + 'm' : '--';
+      const altRange = (o.min_alt != null && o.max_alt != null)
+        ? `${o.min_alt.toLocaleString()}-${o.max_alt.toLocaleString()} ft`
+        : '--';
+      const dist = o.distance_nm != null ? o.distance_nm.toFixed(1) : '--';
+      const statusBadge = o.active
+        ? '<span class="mil-badge" style="background:rgba(196,113,237,0.15);color:var(--purple);border-color:rgba(196,113,237,0.3)">ACTIVE</span>'
+        : '<span style="font-size:0.72rem;color:var(--text-muted)">completed</span>';
+
+      return `<tr>
+        <td style="font-size:0.72rem">${start}</td>
+        <td><span class="ac-callsign" style="color:var(--purple)">${esc(callsign)}</span></td>
+        <td class="ac-type">${esc(type)}</td>
+        <td style="color:var(--purple);font-weight:600">${orbits}x</td>
+        <td>${dur}</td>
+        <td>${altRange}</td>
+        <td class="ac-dist">${dist !== '--' ? dist + ' NM' : '--'}</td>
+        <td>${statusBadge}</td>
+        <td>
+          <div class="mil-links">
+            ${safeUrl(o.wiki_url) ? `<a href="${esc(o.wiki_url)}" target="_blank" rel="noopener" class="mil-link wiki" title="Wikipedia">&#128214;</a>` : ''}
+            ${safeUrl(o.track_url) ? `<a href="${esc(o.track_url)}" target="_blank" rel="noopener" class="mil-link track" title="Track on ADSB.fi">&#127760;</a>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Orbit log load error:', err);
+  }
 }
 
 // ── Watchlist ────────────────────────────────────────────────────────────
@@ -1631,6 +1744,8 @@ async function loadStats() {
         <div class="stat-card"><div class="stat-val">${stats.uniqueTypes}</div><div class="stat-label">Aircraft Types</div></div>
         <div class="stat-card"><div class="stat-val">${stats.todayMil}</div><div class="stat-label">Last 24h</div></div>
         <div class="stat-card"><div class="stat-val">${stats.totalSquawkAlerts || 0}</div><div class="stat-label">Squawk Events</div></div>
+        <div class="stat-card" style="border-color:rgba(196,113,237,0.3)"><div class="stat-val" style="color:var(--purple)">${stats.totalOrbits || 0}</div><div class="stat-label">Orbit Detections</div></div>
+        <div class="stat-card"><div class="stat-val">${(stats.trackHistoryCount || 0).toLocaleString()}</div><div class="stat-label">Track Points</div></div>
       </div>`;
 
     if (stats.topTypes && stats.topTypes.length > 0) {

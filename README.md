@@ -1,6 +1,6 @@
 # Endurance Aircraft Tracker
 
-**Real-time ADS-B aircraft tracking with military detection, watchlist alerts, and emergency squawk monitoring.**
+**Real-time ADS-B aircraft tracking with military detection, orbit/loiter detection, watchlist alerts, and emergency squawk monitoring.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bun](https://img.shields.io/badge/runtime-Bun-f9f1e1.svg)](https://bun.sh/)
@@ -37,6 +37,20 @@ A single-file Bun/TypeScript backend with a self-contained HTML frontend. Polls 
 - 10-minute dedup window prevents alert spam
 - Alert history with dismiss/dismiss-all
 - Configurable watchlist radius (independent of tracking radius)
+
+### Flight Track History
+- Stores every aircraft position report every poll cycle
+- 30-day retention with automatic cleanup
+- Per-aircraft track retrieval via API with time range filtering
+- Foundation for orbit detection and pattern-of-life analysis
+
+### Orbit & Loiter Detection
+- Detects aircraft flying sustained circular patterns (270°+ cumulative heading change)
+- Computes orbit center, radius, altitude range, and orbit count
+- Pushover alerts for military aircraft orbits only (filters out student pilots doing steep turns)
+- Active orbit count on dashboard with clickable card to jump to orbit log
+- Purple ORBIT badge on orbiting aircraft in the live table
+- Orbit detection log with duration, altitude range, and ADSB.fi/Wikipedia links
 
 ### Emergency Squawk Monitoring
 - Detects 7500 (hijack), 7600 (NORDO), 7700 (emergency), 7777 (intercept)
@@ -131,6 +145,8 @@ All endpoints are under `/api/adsb/`.
 | POST | `/watchlist` | Add watchlist entry (`match_type`, `match_value`, `label`) |
 | DELETE | `/watchlist/:id` | Remove watchlist entry |
 | POST | `/watchlist/add-from-contact` | Add military contact to watchlist by hex |
+| GET | `/track/:hex?hours=24` | Position history for one aircraft (max 720h) |
+| GET | `/orbits?active=true&limit=50` | Orbit/loiter detections (filter by active) |
 | GET | `/alerts` | Watchlist alert history |
 | POST | `/alerts/dismiss` | Dismiss alert (`{id}` or `{all: true}`) |
 | GET | `/squawk-alerts` | Squawk alert history |
@@ -159,6 +175,8 @@ endurance-adsb/
 **Database tables:**
 - `aircraft_cache` — current aircraft (rebuilt each poll cycle)
 - `military_contacts` — historical military sightings with session grouping
+- `track_history` — every position report for all aircraft (30-day retention)
+- `orbit_detections` — detected orbit/loiter patterns with geometry
 - `watchlist` — user-defined match rules
 - `watchlist_alerts` — triggered watchlist notifications
 - `squawk_alerts` — emergency squawk detections
